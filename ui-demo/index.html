@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>家庭宝宝照顾助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #FF8C42;
+            --primary-light: #FFA96A;
+            --primary-dark: #E67A37;
+            --success-color: #6BCB77;
+            --success-light: #8BD894;
+            --warning-color: #FFD93D;
+            --danger-color: #FF6B6B;
+            --bg-color: #FFFAF5;
+            --card-bg: #FFFFFF;
+            --text-primary: #2D3436;
+            --text-secondary: #636E72;
+            --text-muted: #B2BEC3;
+            --border-color: #F0F0F0;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+            --radius-sm: 12px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-size: 18px;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            color: #FFFFFF;
+            padding: 32px 24px 40px;
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+            box-shadow: var(--shadow-md);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .greeting {
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .date {
+            font-size: 16px;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .baby-info-card {
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .baby-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #FFE4E1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+
+        .baby-info {
+            flex: 1;
+        }
+
+        .baby-name {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .baby-age {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .section {
+            padding: 0 24px;
+            margin-top: 28px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-count {
+            background: var(--primary-color);
+            color: #FFFFFF;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+            min-width: 32px;
+            text-align: center;
+        }
+
+        .section-link {
+            font-size: 16px;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 16px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:active {
+            transform: scale(0.98);
+            box-shadow: var(--shadow-md);
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .todo-item:last-child {
+            border-bottom: none;
+        }
+
+        .todo-checkbox {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 3px solid var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 2px;
+        }
+
+        .todo-checkbox.checked {
+            background: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        .todo-checkbox.checked::after {
+            content: '✓';
+            color: #FFFFFF;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .todo-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .todo-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            word-break: break-all;
+        }
+
+        .todo-title.completed {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        .todo-meta {
+            font-size: 14px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .todo-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .tag-feeding {
+            background: #FFE4E1;
+            color: #FF6B6B;
+        }
+
+        .tag-health {
+            background: #E8F5E9;
+            color: #4CAF50;
+        }
+
+        .tag-outdoor {
+            background: #E3F2FD;
+            color: #2196F3;
+        }
+
+        .tag-education {
+            background: #FFF3E0;
+            color: #FF9800;
+        }
+
+        .tag-other {
+            background: #F5F5F5;
+            color: #757575;
+        }
+
+        .priority-high {
+            color: var(--danger-color);
+            font-weight: 600;
+        }
+
+        .priority-medium {
+            color: var(--warning-color);
+            font-weight: 600;
+        }
+
+        .priority-low {
+            color: var(--text-muted);
+        }
+
+        .reminder-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: var(--card-bg);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .reminder-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .icon-medicine {
+            background: #FFE4E1;
+        }
+
+        .icon-sleep {
+            background: #E3F2FD;
+        }
+
+        .icon-food {
+            background: #FFF3E0;
+        }
+
+        .icon-health {
+            background: #E8F5E9;
+        }
+
+        .reminder-info {
+            flex: 1;
+        }
+
+        .reminder-title {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .reminder-time {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        .reminder-switch {
+            width: 56px;
+            height: 32px;
+            background: #E0E0E0;
+            border-radius: 16px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .reminder-switch.active {
+            background: var(--primary-color);
+        }
+
+        .reminder-switch::after {
+            content: '';
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            background: #FFFFFF;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .reminder-switch.active::after {
+            transform: translateX(24px);
+        }
+
+        .daily-record-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .daily-record-item:last-child {
+            border-bottom: none;
+        }
+
+        .record-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .icon-breakfast {
+            background: #FFF3E0;
+        }
+
+        .icon-lunch {
+            background: #E8F5E9;
+        }
+
+        .icon-dinner {
+            background: #E3F2FD;
+        }
+
+        .icon-nap {
+            background: #FCE4EC;
+        }
+
+        .icon-sleep {
+            background: #EDE7F6;
+        }
+
+        .record-content {
+            flex: 1;
+        }
+
+        .record-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .record-detail {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .record-time {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .add-btn {
+            position: fixed;
+            right: 24px;
+            bottom: 100px;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            color: #FFFFFF;
+            font-size: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-lg);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .add-btn:active {
+            transform: scale(0.9);
+        }
+
+        .add-btn:hover {
+            box-shadow: 0 12px 32px rgba(255,140,66,0.4);
+        }
+
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0 20px;
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
+            z-index: 200;
+        }
+
+        .tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 60px;
+        }
+
+        .tab-icon {
+            font-size: 28px;
+            transition: color 0.3s ease;
+        }
+
+        .tab-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            transition: color 0.3s ease;
+        }
+
+        .tab-item.active .tab-icon {
+            color: var(--primary-color);
+        }
+
+        .tab-item.active .tab-label {
+            color: var(--primary-color);
+        }
+
+        .tab-item:active {
+            opacity: 0.7;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: flex-end;
+            z-index: 300;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            width: 100%;
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            padding: 24px;
+            padding-bottom: 40px;
+            animation: slideUp 0.3s ease;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #F5F5F5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            display: block;
+            color: var(--text-secondary);
+        }
+
+        .form-input {
+            width: 100%;
+            height: 56px;
+            padding: 0 16px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 18px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-select {
+            width: 100%;
+            height: 56px;
+            padding: 0 16px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 18px;
+            background: #FFFFFF;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .tag-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .tag-option {
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            border: 2px solid var(--border-color);
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tag-option.active {
+            border-color: var(--primary-color);
+            background: rgba(255,140,66,0.1);
+            color: var(--primary-color);
+        }
+
+        .priority-options {
+            display: flex;
+            gap: 12px;
+        }
+
+        .priority-option {
+            flex: 1;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            border: 2px solid var(--border-color);
+            font-size: 16px;
+            font-weight: 500;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .priority-option.active {
+            border-color: var(--primary-color);
+            background: rgba(255,140,66,0.1);
+            color: var(--primary-color);
+        }
+
+        .btn-primary {
+            width: 100%;
+            height: 56px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            color: #FFFFFF;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 8px;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 24px;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .empty-text {
+            font-size: 16px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #F0F0F0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 16px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color) 0%, var(--success-color) 100%);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            padding: 16px 0;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        @media (min-width: 480px) {
+            body {
+                max-width: 480px;
+                margin: 0 auto;
+                box-shadow: 0 0 24px rgba(0,0,0,0.1);
+                min-height: 100vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-top">
+            <div>
+                <div class="greeting">上午好，妈妈 👋</div>
+                <div class="date">7月6日 周日</div>
+            </div>
+            <div class="user-avatar">妈</div>
+        </div>
+        
+        <div class="baby-info-card">
+            <div class="baby-avatar">👶</div>
+            <div class="baby-info">
+                <div class="baby-name">朵朵</div>
+                <div class="baby-age">1岁6个月 · 今日记录 (2)</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="section">
+            <div class="section-header">
+                <div class="section-title">📋 今天要做的事</div>
+                <div class="section-count">3</div>
+            </div>
+            <div class="card" id="todo-list">
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="todo-progress" style="width: 33%"></div>
+            </div>
+            <div class="stats-row">
+                <div class="stat-item">
+                    <div class="stat-value">1</div>
+                    <div class="stat-label">已完成</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">待完成</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">33%</div>
+                    <div class="stat-label">完成率</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <div class="section-title">⏰ 今天的提醒</div>
+                <div class="section-count">2</div>
+            </div>
+            <div id="reminder-list"></div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <div class="section-title">👶 朵朵今天</div>
+                <a href="#" class="section-link">查看全部 →</a>
+            </div>
+            <div class="card" id="daily-record-list"></div>
+        </section>
+    </main>
+
+    <button class="add-btn" onclick="openAddModal()">+</button>
+
+    <nav class="tab-bar">
+        <div class="tab-item active" onclick="switchTab('home')">
+            <div class="tab-icon">🏠</div>
+            <div class="tab-label">首页</div>
+        </div>
+        <div class="tab-item" onclick="switchTab('todo')">
+            <div class="tab-icon">📋</div>
+            <div class="tab-label">待办</div>
+        </div>
+        <div class="tab-item" onclick="switchTab('reminder')">
+            <div class="tab-icon">⏰</div>
+            <div class="tab-label">提醒</div>
+        </div>
+        <div class="tab-item" onclick="switchTab('baby')">
+            <div class="tab-icon">👶</div>
+            <div class="tab-label">宝宝</div>
+        </div>
+    </nav>
+
+    <div class="modal-overlay" id="add-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">添加新待办</div>
+                <div class="modal-close" onclick="closeAddModal()">×</div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">待办内容</label>
+                <input type="text" class="form-input" id="new-todo-title" placeholder="例如：给朵朵做辅食">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">分类</label>
+                <div class="tag-options">
+                    <div class="tag-option" onclick="selectTag(this, 'feeding')" data-tag="feeding">🥣 喂食</div>
+                    <div class="tag-option" onclick="selectTag(this, 'health')" data-tag="health">💊 卫生</div>
+                    <div class="tag-option" onclick="selectTag(this, 'outdoor')" data-tag="outdoor">🏃 出行</div>
+                    <div class="tag-option" onclick="selectTag(this, 'education')" data-tag="education">📚 教育</div>
+                    <div class="tag-option" onclick="selectTag(this, 'other')" data-tag="other">📝 其他</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">优先级</label>
+                <div class="priority-options">
+                    <div class="priority-option" onclick="selectPriority(this, 'high')" data-priority="high">🔥 高</div>
+                    <div class="priority-option" onclick="selectPriority(this, 'medium')" data-priority="medium">⭐ 中</div>
+                    <div class="priority-option" onclick="selectPriority(this, 'low')" data-priority="low">☕ 低</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">时间</label>
+                <select class="form-select" id="new-todo-time">
+                    <option value="morning">上午</option>
+                    <option value="noon">中午</option>
+                    <option value="afternoon">下午</option>
+                    <option value="evening">晚上</option>
+                </select>
+            </div>
+            
+            <button class="btn-primary" onclick="addTodo()">添加</button>
+        </div>
+    </div>
+
+    <script>
+        let todos = [
+            { id: 1, title: '给朵朵做辅食', tag: 'feeding', priority: 'high', time: '早餐前', completed: false },
+            { id: 2, title: '带朵朵下楼玩', tag: 'outdoor', priority: 'medium', time: '16:00', completed: false },
+            { id: 3, title: '给朵朵读绘本', tag: 'education', priority: 'low', time: '睡前', completed: true },
+        ];
+
+        let reminders = [
+            { id: 1, title: '吃维生素 D', icon: '💊', type: 'medicine', time: '09:00', repeat: '每天', enabled: true },
+            { id: 2, title: '午睡时间', icon: '😴', type: 'sleep', time: '12:30', repeat: '每天', enabled: true },
+        ];
+
+        let dailyRecords = [
+            { id: 1, icon: '🥣', type: 'breakfast', title: '早餐', detail: '鸡蛋羹+小米粥', time: '08:00' },
+            { id: 2, icon: '😴', type: 'nap', title: '午睡', detail: '13:00-14:30', time: '14:30' },
+        ];
+
+        const tagConfig = {
+            feeding: { className: 'tag-feeding', label: '喂食' },
+            health: { className: 'tag-health', label: '卫生' },
+            outdoor: { className: 'tag-outdoor', label: '出行' },
+            education: { className: 'tag-education', label: '教育' },
+            other: { className: 'tag-other', label: '其他' },
+        };
+
+        const priorityConfig = {
+            high: { className: 'priority-high', label: '高' },
+            medium: { className: 'priority-medium', label: '中' },
+            low: { className: 'priority-low', label: '低' },
+        };
+
+        function renderTodos() {
+            const container = document.getElementById('todo-list');
+            container.innerHTML = todos.map(todo => `
+                <div class="todo-item" onclick="toggleTodo(${todo.id})">
+                    <div class="todo-checkbox ${todo.completed ? 'checked' : ''}"></div>
+                    <div class="todo-content">
+                        <div class="todo-title ${todo.completed ? 'completed' : ''}">${todo.title}</div>
+                        <div class="todo-meta">
+                            <span class="todo-tag ${tagConfig[todo.tag]?.className}">${tagConfig[todo.tag]?.label}</span>
+                            <span class="${priorityConfig[todo.priority]?.className}">${priorityConfig[todo.priority]?.label}</span>
+                            <span>${todo.time}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            updateStats();
+        }
+
+        function renderReminders() {
+            const container = document.getElementById('reminder-list');
+            container.innerHTML = reminders.map(reminder => `
+                <div class="reminder-item">
+                    <div class="reminder-icon icon-${reminder.type}">${reminder.icon}</div>
+                    <div class="reminder-info">
+                        <div class="reminder-title">${reminder.title}</div>
+                        <div class="reminder-time">${reminder.time} · ${reminder.repeat}</div>
+                    </div>
+                    <div class="reminder-switch ${reminder.enabled ? 'active' : ''}" onclick="toggleReminder(event, ${reminder.id})"></div>
+                </div>
+            `).join('');
+        }
+
+        function renderDailyRecords() {
+            const container = document.getElementById('daily-record-list');
+            container.innerHTML = dailyRecords.map(record => `
+                <div class="daily-record-item">
+                    <div class="record-icon icon-${record.type}">${record.icon}</div>
+                    <div class="record-content">
+                        <div class="record-title">${record.title}</div>
+                        <div class="record-detail">${record.detail}</div>
+                    </div>
+                    <div class="record-time">${record.time}</div>
+                </div>
+            `).join('');
+        }
+
+        function toggleTodo(id) {
+            const todo = todos.find(t => t.id === id);
+            if (todo) {
+                todo.completed = !todo.completed;
+                renderTodos();
+            }
+        }
+
+        function toggleReminder(event, id) {
+            event.stopPropagation();
+            const reminder = reminders.find(r => r.id === id);
+            if (reminder) {
+                reminder.enabled = !reminder.enabled;
+                renderReminders();
+            }
+        }
+
+        function updateStats() {
+            const completed = todos.filter(t => t.completed).length;
+            const total = todos.length;
+            const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+            
+            const progressBar = document.getElementById('todo-progress');
+            progressBar.style.width = `${percentage}%`;
+            
+            document.querySelectorAll('.stat-value')[0].textContent = completed;
+            document.querySelectorAll('.stat-value')[1].textContent = total - completed;
+            document.querySelectorAll('.stat-value')[2].textContent = `${percentage}%`;
+        }
+
+        let selectedTag = null;
+        let selectedPriority = null;
+
+        function selectTag(element, tag) {
+            document.querySelectorAll('.tag-option').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            selectedTag = tag;
+        }
+
+        function selectPriority(element, priority) {
+            document.querySelectorAll('.priority-option').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            selectedPriority = priority;
+        }
+
+        function openAddModal() {
+            document.getElementById('add-modal').classList.add('active');
+            document.getElementById('new-todo-title').focus();
+        }
+
+        function closeAddModal() {
+            document.getElementById('add-modal').classList.remove('active');
+            document.getElementById('new-todo-title').value = '';
+            document.querySelectorAll('.tag-option').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.priority-option').forEach(el => el.classList.remove('active'));
+            selectedTag = null;
+            selectedPriority = null;
+        }
+
+        function addTodo() {
+            const title = document.getElementById('new-todo-title').value.trim();
+            const time = document.getElementById('new-todo-time').value;
+            
+            if (!title) {
+                alert('请输入待办内容');
+                return;
+            }
+            
+            const newTodo = {
+                id: Date.now(),
+                title,
+                tag: selectedTag || 'other',
+                priority: selectedPriority || 'medium',
+                time: getTimeLabel(time),
+                completed: false,
+            };
+            
+            todos.unshift(newTodo);
+            renderTodos();
+            closeAddModal();
+        }
+
+        function getTimeLabel(value) {
+            const labels = {
+                morning: '上午',
+                noon: '中午',
+                afternoon: '下午',
+                evening: '晚上',
+            };
+            return labels[value] || value;
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            
+            alert(`切换到${tab}页面（演示版本）`);
+        }
+
+        document.getElementById('add-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAddModal();
+            }
+        });
+
+        renderTodos();
+        renderReminders();
+        renderDailyRecords();
+    </script>
+</body>
+</html>

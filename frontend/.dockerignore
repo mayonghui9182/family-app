@@ -1,0 +1,46 @@
+# 前端 .dockerignore - Docker 构建时忽略的文件和目录
+
+# 依赖目录
+node_modules/
+
+# 构建输出目录
+dist/
+
+# 版本控制
+.git/
+.gitignore
+.gitattributes
+
+# 文档
+README.md
+*.md
+
+# 环境配置
+.env
+.env.*
+
+# IDE 配置
+.idea/
+.vscode/
+*.iml
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 日志文件
+*.log
+logs/
+
+# 临时文件
+tmp/
+temp/
+*.tmp
+
+# 缓存目录
+.cache/
+.parcel-cache/
+.eslintcache
+
+# pnpm 存储
+.pnpm-store/

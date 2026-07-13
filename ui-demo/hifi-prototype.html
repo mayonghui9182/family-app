@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家庭宝宝照顾助手 - 高保真原型</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #FF8C42;
+            --primary-light: #FFB07A;
+            --primary-dark: #E87A2F;
+            --secondary: #6BCB77;
+            --secondary-light: #A8E6AF;
+            --accent-pink: #FF8FA3;
+            --accent-blue: #74B9FF;
+            --accent-yellow: #FDCB6E;
+            --accent-purple: #A29BFE;
+            --bg-cream: #FFFAF5;
+            --bg-soft: #FFF5ED;
+            --text-dark: #2D3436;
+            --text-medium: #636E72;
+            --text-light: #B2BEC3;
+            --white: #FFFFFF;
+            --shadow-sm: 0 4px 12px rgba(255, 140, 66, 0.1);
+            --shadow-md: 0 8px 24px rgba(255, 140, 66, 0.15);
+            --shadow-lg: 0 16px 48px rgba(255, 140, 66, 0.2);
+        }
+
+        body {
+            font-family: 'Nunito', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #FFFAF5 0%, #FFF0E0 50%, #FFE8D6 100%);
+            min-height: 100vh;
+            padding: 60px 40px;
+            color: var(--text-dark);
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .page-title {
+            font-size: 48px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+            letter-spacing: -1px;
+        }
+
+        .page-subtitle {
+            font-size: 18px;
+            color: var(--text-medium);
+            font-weight: 500;
+        }
+
+        .prototypes-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 48px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .phone-frame {
+            width: 320px;
+            height: 680px;
+            background: var(--white);
+            border-radius: 48px;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+            border: 10px solid #2D3436;
+        }
+
+        .phone-notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 28px;
+            background: #2D3436;
+            border-radius: 0 0 20px 20px;
+            z-index: 100;
+        }
+
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .screen-label {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .screen-label-desc {
+            text-align: center;
+            font-size: 14px;
+            color: var(--text-medium);
+            margin-top: 4px;
+        }
+
+        /* ============ 首页 ============ */
+        .home-screen {
+            background: var(--bg-cream);
+            height: 100%;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        .home-header {
+            background: linear-gradient(160deg, var(--primary) 0%, var(--primary-light) 100%);
+            padding: 48px 20px 28px;
+            border-radius: 0 0 32px 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .home-header::before {
+            content: '';
+            position: absolute;
+            top: -60px;
+            right: -40px;
+            width: 160px;
+            height: 160px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+        }
+
+        .home-header::after {
+            content: '';
+            position: absolute;
+            bottom: -30px;
+            left: 20px;
+            width: 100px;
+            height: 100px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .greeting-box {
+            color: var(--white);
+        }
+
+        .greeting-text {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .greeting-date {
+            font-size: 13px;
+            opacity: 0.85;
+            font-weight: 500;
+        }
+
+        .user-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--white);
+            border: 2px solid rgba(255,255,255,0.5);
+        }
+
+        .baby-card {
+            background: rgba(255,255,255,0.25);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            position: relative;
+            z-index: 1;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .baby-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #FFE4E1 0%, #FFCDD2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 4px 12px rgba(255,143,163,0.3);
+        }
+
+        .baby-info {
+            flex: 1;
+            color: var(--white);
+        }
+
+        .baby-name {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .baby-age {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .baby-today {
+            font-size: 11px;
+            margin-top: 4px;
+            background: rgba(255,255,255,0.25);
+            padding: 3px 10px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        .section {
+            padding: 20px 20px 0;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .section-badge {
+            background: var(--primary);
+            color: var(--white);
+            font-size: 12px;
+            font-weight: 700;
+            padding: 2px 10px;
+            border-radius: 12px;
+            min-width: 28px;
+            text-align: center;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 8px 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 0;
+            border-bottom: 1px solid #F8F8F8;
+        }
+
+        .todo-item:last-child {
+            border-bottom: none;
+        }
+
+        .todo-check {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2.5px solid #E0E0E0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .todo-check.checked {
+            background: var(--secondary);
+            border-color: var(--secondary);
+        }
+
+        .todo-check.checked::after {
+            content: '✓';
+            color: var(--white);
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .todo-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .todo-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .todo-title.done {
+            text-decoration: line-through;
+            color: var(--text-light);
+        }
+
+        .todo-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .todo-tag {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .tag-feeding {
+            background: #FFE4E1;
+            color: #FF6B6B;
+        }
+
+        .tag-outdoor {
+            background: #E3F2FD;
+            color: #2196F3;
+        }
+
+        .tag-education {
+            background: #FFF3E0;
+            color: #FF9800;
+        }
+
+        .todo-priority {
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .priority-high { color: #FF6B6B; }
+        .priority-medium { color: var(--accent-yellow); }
+        .priority-low { color: var(--text-light); }
+
+        .todo-time {
+            font-size: 12px;
+            color: var(--text-medium);
+            font-weight: 600;
+        }
+
+        .progress-section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 16px;
+            margin-top: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: #F0F0F0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 5px;
+            width: 33%;
+        }
+
+        .progress-stats {
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-num {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-dark);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-light);
+            margin-top: 2px;
+            font-weight: 600;
+        }
+
+        .reminder-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .reminder-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .reminder-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .icon-medicine {
+            background: linear-gradient(135deg, #FFE4E1 0%, #FFCDD2 100%);
+        }
+
+        .icon-sleep {
+            background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+        }
+
+        .reminder-content {
+            flex: 1;
+        }
+
+        .reminder-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .reminder-sub {
+            font-size: 12px;
+            color: var(--text-medium);
+            font-weight: 600;
+        }
+
+        .reminder-switch {
+            width: 44px;
+            height: 24px;
+            background: var(--primary);
+            border-radius: 12px;
+            position: relative;
+        }
+
+        .reminder-switch::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: var(--white);
+            border-radius: 50%;
+            top: 2px;
+            right: 2px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .daily-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 4px 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .daily-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #F8F8F8;
+        }
+
+        .daily-item:last-child {
+            border-bottom: none;
+        }
+
+        .daily-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .icon-meal {
+            background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
+        }
+
+        .icon-nap {
+            background: linear-gradient(135deg, #EDE7F6 0%, #D1C4E9 100%);
+        }
+
+        .daily-content {
+            flex: 1;
+        }
+
+        .daily-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .daily-detail {
+            font-size: 12px;
+            color: var(--text-medium);
+        }
+
+        .daily-time {
+            font-size: 12px;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        .tab-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 72px;
+            background: var(--white);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: 8px;
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
+        }
+
+        .tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .tab-icon {
+            font-size: 24px;
+            opacity: 0.4;
+        }
+
+        .tab-item.active .tab-icon {
+            opacity: 1;
+        }
+
+        .tab-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        .tab-item.active .tab-label {
+            color: var(--primary);
+        }
+
+        .fab {
+            position: absolute;
+            right: 20px;
+            bottom: 88px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: var(--white);
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 24px rgba(255,140,66,0.4);
+            z-index: 50;
+            font-weight: 300;
+        }
+
+        /* ============ 宝宝成长页 ============ */
+        .baby-screen {
+            background: linear-gradient(180deg, #FFF0F5 0%, var(--bg-cream) 40%);
+            height: 100%;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        .baby-header {
+            background: linear-gradient(160deg, var(--accent-pink) 0%, #FFB3C1 100%);
+            padding: 48px 20px 28px;
+            border-radius: 0 0 32px 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .baby-header::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            right: -20px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+        }
+
+        .baby-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .back-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 18px;
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--white);
+        }
+
+        .more-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 20px;
+        }
+
+        .baby-profile {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .profile-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 22px;
+            background: linear-gradient(135deg, #FFE4E1 0%, #FFCDD2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            box-shadow: 0 4px 16px rgba(255,143,163,0.4);
+            border: 3px solid rgba(255,255,255,0.5);
+        }
+
+        .profile-info {
+            flex: 1;
+            color: var(--white);
+        }
+
+        .profile-name {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .profile-detail {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .growth-stats {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .growth-stat-card {
+            flex: 1;
+            background: rgba(255,255,255,0.25);
+            backdrop-filter: blur(10px);
+            border-radius: 14px;
+            padding: 12px 8px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .growth-stat-num {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--white);
+            margin-bottom: 2px;
+        }
+
+        .growth-stat-unit {
+            font-size: 11px;
+            opacity: 0.9;
+            color: var(--white);
+        }
+
+        .growth-stat-label {
+            font-size: 11px;
+            color: rgba(255,255,255,0.8);
+            margin-top: 4px;
+            font-weight: 600;
+        }
+
+        .stat-change {
+            font-size: 10px;
+            color: rgba(255,255,255,0.8);
+            margin-top: 2px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 8px;
+            padding: 16px 20px 0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 14px;
+            background: var(--white);
+            text-align: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-medium);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: var(--white);
+        }
+
+        .chart-section {
+            padding: 16px 20px 0;
+        }
+
+        .chart-card {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .chart-title {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .chart-type-tabs {
+            display: flex;
+            gap: 4px;
+            background: #F5F5F5;
+            border-radius: 10px;
+            padding: 2px;
+        }
+
+        .chart-type {
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-medium);
+            border-radius: 8px;
+        }
+
+        .chart-type.active {
+            background: var(--white);
+            color: var(--primary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .chart-svg {
+            width: 100%;
+            height: 140px;
+        }
+
+        .milestone-section {
+            padding: 16px 20px 0;
+        }
+
+        .milestone-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 14px;
+            margin-bottom: 10px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .milestone-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
+        }
+
+        .milestone-icon.done {
+            background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+        }
+
+        .milestone-content {
+            flex: 1;
+        }
+
+        .milestone-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .milestone-desc {
+            font-size: 11px;
+            color: var(--text-medium);
+        }
+
+        .milestone-status {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .milestone-status.pending {
+            background: #F0F0F0;
+            color: var(--text-light);
+            font-size: 12px;
+        }
+
+        /* ============ 待办页 ============ */
+        .todo-screen {
+            background: var(--bg-cream);
+            height: 100%;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        .todo-header {
+            background: linear-gradient(160deg, var(--primary) 0%, var(--primary-light) 100%);
+            padding: 48px 20px 28px;
+            border-radius: 0 0 32px 32px;
+        }
+
+        .todo-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--white);
+            margin-bottom: 4px;
+        }
+
+        .todo-subtitle {
+            font-size: 13px;
+            color: rgba(255,255,255,0.85);
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            padding: 16px 20px 0;
+        }
+
+        .filter-tab {
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: var(--white);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-medium);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .filter-tab.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: var(--white);
+        }
+
+        .todo-list-section {
+            padding: 16px 20px 0;
+        }
+
+        .todo-list-card {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 8px 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* 装饰元素 */
+        .decoration-dots {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            opacity: 0.3;
+        }
+
+        /* 页面装饰 */
+        .bg-decoration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: -1;
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.4;
+        }
+
+        .blob-1 {
+            width: 300px;
+            height: 300px;
+            background: var(--primary-light);
+            top: -100px;
+            right: 10%;
+        }
+
+        .blob-2 {
+            width: 250px;
+            height: 250px;
+            background: var(--accent-pink);
+            bottom: -50px;
+            left: 5%;
+        }
+
+        .blob-3 {
+            width: 200px;
+            height: 200px;
+            background: var(--secondary);
+            top: 40%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-decoration">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="page-header">
+        <h1 class="page-title">🌸 朵朵成长助手</h1>
+        <p class="page-subtitle">家庭宝宝照顾协作工具 · 高保真原型设计</p>
+    </div>
+
+    <div class="prototypes-container">
+        <!-- 手机1：首页 -->
+        <div>
+            <div class="phone-frame">
+                <div class="phone-notch"></div>
+                <div class="phone-screen">
+                    <div class="home-screen">
+                        <div class="home-header">
+                            <div class="header-top">
+                                <div class="greeting-box">
+                                    <div class="greeting-text">上午好，妈妈 👋</div>
+                                    <div class="greeting-date">7月6日 周日</div>
+                                </div>
+                                <div class="user-avatar">妈</div>
+                            </div>
+                            <div class="baby-card">
+                                <div class="baby-avatar">👶</div>
+                                <div class="baby-info">
+                                    <div class="baby-name">朵朵</div>
+                                    <div class="baby-age">女宝宝 · 1岁6个月</div>
+                                    <div class="baby-today">今日记录 2 条</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <div class="section-header">
+                                <div class="section-title">📋 今天要做的事</div>
+                                <div class="section-badge">3</div>
+                            </div>
+                            <div class="card">
+                                <div class="todo-item">
+                                    <div class="todo-check"></div>
+                                    <div class="todo-main">
+                                        <div class="todo-title">给朵朵做辅食</div>
+                                        <div class="todo-meta">
+                                            <span class="todo-tag tag-feeding">喂食</span>
+                                            <span class="todo-priority priority-high">高</span>
+                                            <span class="todo-time">早餐前</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="todo-item">
+                                    <div class="todo-check"></div>
+                                    <div class="todo-main">
+                                        <div class="todo-title">带朵朵下楼玩</div>
+                                        <div class="todo-meta">
+                                            <span class="todo-tag tag-outdoor">出行</span>
+                                            <span class="todo-priority priority-medium">中</span>
+                                            <span class="todo-time">16:00</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="todo-item">
+                                    <div class="todo-check checked"></div>
+                                    <div class="todo-main">
+                                        <div class="todo-title done">给朵朵读绘本</div>
+                                        <div class="todo-meta">
+                                            <span class="todo-tag tag-education">教育</span>
+                                            <span class="todo-priority priority-low">低</span>
+                                            <span class="todo-time">睡前</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="progress-section">
+                                <div class="progress-bar">
+                                    <div class="progress-fill"></div>
+                                </div>
+                                <div class="progress-stats">
+                                    <div class="stat">
+                                        <div class="stat-num">1</div>
+                                        <div class="stat-label">已完成</div>
+                                    </div>
+                                    <div class="stat">
+                                        <div class="stat-num">2</div>
+                                        <div class="stat-label">待完成</div>
+                                    </div>
+                                    <div class="stat">
+                                        <div class="stat-num">33%</div>
+                                        <div class="stat-label">完成率</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <div class="section-header">
+                                <div class="section-title">⏰ 今天的提醒</div>
+                                <div class="section-badge">2</div>
+                            </div>
+                            <div class="reminder-list">
+                                <div class="reminder-item">
+                                    <div class="reminder-icon icon-medicine">💊</div>
+                                    <div class="reminder-content">
+                                        <div class="reminder-title">吃维生素 D</div>
+                                        <div class="reminder-sub">09:00 · 每天</div>
+                                    </div>
+                                    <div class="reminder-switch"></div>
+                                </div>
+                                <div class="reminder-item">
+                                    <div class="reminder-icon icon-sleep">😴</div>
+                                    <div class="reminder-content">
+                                        <div class="reminder-title">午睡时间</div>
+                                        <div class="reminder-sub">12:30 · 每天</div>
+                                    </div>
+                                    <div class="reminder-switch"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="fab">+</div>
+
+                        <div class="tab-bar">
+                            <div class="tab-item active">
+                                <div class="tab-icon">🏠</div>
+                                <div class="tab-label">首页</div>
+                            </div>
+                            <div class="tab-item">
+                                <div class="tab-icon">📋</div>
+                                <div class="tab-label">待办</div>
+                            </div>
+                            <div class="tab-item">
+                                <div class="tab-icon">⏰</div>
+                                <div class="tab-label">提醒</div>
+                            </div>
+                            <div class="tab-item">
+                                <div class="tab-icon">👶</div>
+                                <div class="tab-label">宝宝</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="screen-label">首页</div>
+            <div class="screen-label-desc">今日概览 · 待办 · 提醒 · 宝宝记录</div>
+        </div>
+
+        <!-- 手机2：宝宝成长页 -->
+        <div>
+            <div class="phone-frame">
+                <div class="phone-notch"></div>
+                <div class="phone-screen">
+                    <div class="baby-screen">
+                        <div class="baby-header">
+                            <div class="baby-header-top">
+                                <div class="back-btn">‹</div>
+                                <div class="header-title">宝宝成长</div>
+                                <div class="more-btn">⋯</div>
+                            </div>
+                            <div class="baby-profile">
+                                <div class="profile-avatar">👶</div>
+                                <div class="profile-info">
+                                    <div class="profile-name">朵朵</div>
+                                    <div class="profile-detail">女宝宝 · 2024年1月出生</div>
+                                </div>
+                            </div>
+                            <div class="growth-stats">
+                                <div class="growth-stat-card">
+                                    <div class="growth-stat-num">82.5<span style="font-size:12px">cm</span></div>
+                                    <div class="growth-stat-label">身高</div>
+                                    <div class="stat-change">↑ +2cm</div>
+                                </div>
+                                <div class="growth-stat-card">
+                                    <div class="growth-stat-num">10.5<span style="font-size:12px">kg</span></div>
+                                    <div class="growth-stat-label">体重</div>
+                                    <div class="stat-change">↑ +0.3kg</div>
+                                </div>
+                                <div class="growth-stat-card">
+                                    <div class="growth-stat-num">18<span style="font-size:12px">月</span></div>
+                                    <div class="growth-stat-label">月龄</div>
+                                    <div class="stat-change">正常范围</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-buttons">
+                            <div class="tab-btn active">成长记录</div>
+                            <div class="tab-btn">疫苗</div>
+                            <div class="tab-btn">里程碑</div>
+                        </div>
+
+                        <div class="chart-section">
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <div class="chart-title">📈 身高体重曲线</div>
+                                    <div class="chart-type-tabs">
+                                        <div class="chart-type active">身高</div>
+                                        <div class="chart-type">体重</div>
+                                    </div>
+                                </div>
+                                <svg class="chart-svg" viewBox="0 0 260 140">
+                                    <defs>
+                                        <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                            <stop offset="0%" style="stop-color:#FF8C42;stop-opacity:0.3"></stop>
+                                            <stop offset="100%" style="stop-color:#FF8C42;stop-opacity:0.05"></stop>
+                                        </linearGradient>
+                                    </defs>
+                                    <path d="M0,100 Q40,90 60,80 T120,55 T180,35 T240,20 L260,15 L260,140 L0,140 Z" fill="url(#lineGradient)"/>
+                                    <path d="M0,100 Q40,90 60,80 T120,55 T180,35 T240,20" fill="none" stroke="#FF8C42" stroke-width="3" stroke-linecap="round"/>
+                                    <circle cx="0" cy="100" r="5" fill="#FF8C42"/>
+                                    <circle cx="60" cy="80" r="5" fill="#FF8C42"/>
+                                    <circle cx="120" cy="55" r="5" fill="#FF8C42"/>
+                                    <circle cx="180" cy="35" r="5" fill="#FF8C42"/>
+                                    <circle cx="240" cy="20" r="6" fill="#FF8C42" stroke="#fff" stroke-width="2"/>
+                                    <line x1="0" y1="60" x2="260" y2="60" stroke="#E0E0E0" stroke-width="1" stroke-dasharray="4,4"/>
+                                    <text x="250" y="55" font-size="9" fill="#B2BEC3">平均值</text>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div class="milestone-section">
+                            <div class="section-header">
+                                <div class="section-title">🌟 本月里程碑</div>
+                            </div>
+                            <div class="milestone-card">
+                                <div class="milestone-icon done">🚶</div>
+                                <div class="milestone-content">
+                                    <div class="milestone-title">独立行走</div>
+                                    <div class="milestone-desc">18个月 · 大运动</div>
+                                </div>
+                                <div class="milestone-status">✓</div>
+                            </div>
+                            <div class="milestone-card">
+                                <div class="milestone-icon done">🗣️</div>
+                                <div class="milestone-content">
+                                    <div class="milestone-title">说10个词</div>
+                                    <div class="milestone-desc">18个月 · 语言</div>
+                                </div>
+                                <div class="milestone-status">✓</div>
+                            </div>
+                            <div class="milestone-card">
+                                <div class="milestone-icon">🧩</div>
+                                <div class="milestone-content">
+                                    <div class="milestone-title">搭4块积木</div>
+                                    <div class="milestone-desc">18个月 · 精细动作</div>
+                                </div>
+                                <div class="milestone-status pending">关注</div>
+                            </div>
+                        </div>
+
+                        <div class="tab-bar">
+                            <div class="tab-item">
+                                <div class="tab-icon">🏠</div>
+                                <div class="tab-label">首页</div>
+                            </div>
+                            <div class="tab-item">
+                                <div class="tab-icon">📋</div>
+                                <div class="tab-label">待办</div>
+                            </div>
+                            <div class="tab-item">
+                                <div class="tab-icon">⏰</div>
+                                <div class="tab-label">提醒</div>
+                            </div>
+                            <div class="tab-item active">
+                                <div class="tab-icon">👶</div>
+                                <div class="tab-label">宝宝</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="screen-label">宝宝成长页</div>
+            <div class="screen-label-desc">身高体重曲线 · 发育里程碑</div>
+        </div>
+
+        <!-- 手机3：待办清单页 -->
+        <div>
+            <div class="phone-frame">
+                <div class="phone-notch"></div>
+                <div class="phone-screen">
+                    <div class="todo-screen">
+                        <div class="todo-header">
+                            <div class="todo-title">📋 待办清单</div>
+                            <div class="todo-subtitle">全家共享 · 谁做了谁勾掉</div>
+                        </div>
+
+                        <div class="filter-tabs">
+                            <div class="filter-tab active">全部</div>
+                            <div class="filter-tab">进行中</div>
+                            <div class="filter-tab">已完成</div>
+                        </div>
+
+                        <div class="filter-tabs" style="padding-top: 12px;">
+                            <div class="filter-tab">🥣 喂食</div>
+                            <div class="filter-tab">💊 卫生</div>
+                            <div class="filter-tab">🏃 出行</div>
+                            <div class="filter-tab">📚 教育</div>
+                        </div>
+
+                        <div class="todo-list-section">
+                            <div class="todo-list-card">
+                                <div class="todo-item">
+                                    <div class="todo-check"></div>
+                                    <div class="todo-main">
+                                        <div class="todo-title">给朵朵做早餐</div>
+                                        <div class="todo-meta">
+                                            <span class="todo-tag tag-feeding">喂食</span>
+                                            <span class="todo-priority priority-high">高</span>
+                                            <span class="todo-time">今天 08:00</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="todo-item">
+                                    <div class="todo-check"></div>
+                                    <div class="todo-main">
+                                        <div class="todo-title">给朵朵洗澡</div>
+                                        <div class="todo-meta">
+                                            <span class="todo-tag tag-education">卫生</span>
+                                            <span class="todo-priority priority-medium">中</span>
+                                            <span class="todo-time">今天 20:00</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="todo-item">
+                                    <div class="todo-check checked"></div>
+                                    <div class="todo-main">
+                                        <div class="todo-title done">换尿布</div>
+                                        <div class="todo-meta">
+                                            <span class="todo-tag tag-education">卫生</span>
+                                            <span class="todo-priority priority-high">高</span>
+                                            <span class="todo-time">已完成</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="todo-item">
+                                    <div class="todo-check"></div>
+                                    <div class="todo-main">
+                                        <div class="todo-title">带朵朵下楼玩</div>
+                                        <div class="todo-meta">
+                                            <span class="todo-tag tag-outdoor">出行</span>
+                                            <span class="todo-priority priority-medium">中</span>
+                                            <span class="todo-time">明天 16:00</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="todo-item">
+                                    <div class="todo-check"></div>
+                                    <div class="todo-main">
+                                        <div class="todo-title">周末去公园</div>
+                                        <div class="todo-meta">
+                                            <span class="todo-tag tag-outdoor">出行</span>
+                                            <span class="todo-priority priority-low">低</span>
+                                            <span class="todo-time">周六</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="fab">+</div>
+
+                        <div class="tab-bar">
+                            <div class="tab-item">
+                                <div class="tab-icon">🏠</div>
+                                <div class="tab-label">首页</div>
+                            </div>
+                            <div class="tab-item active">
+                                <div class="tab-icon">📋</div>
+                                <div class="tab-label">待办</div>
+                            </div>
+                            <div class="tab-item">
+                                <div class="tab-icon">⏰</div>
+                                <div class="tab-label">提醒</div>
+                            </div>
+                            <div class="tab-item">
+                                <div class="tab-icon">👶</div>
+                                <div class="tab-label">宝宝</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="screen-label">待办清单页</div>
+            <div class="screen-label-desc">分类筛选 · 优先级 · 共享协作</div>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 80px; padding-bottom: 40px;">
+        <p style="color: var(--text-medium); font-size: 14px; font-weight: 600;">
+            温暖橙色主题 · 适老化大字体设计 · 卡片式布局
+        </p>
+    </div>
+</body>
+</html>

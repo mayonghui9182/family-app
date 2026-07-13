@@ -1,0 +1,88 @@
+# Docker Compose 配置文件 - 家庭管理系统
+# 适用于家庭 NAS / 树莓派部署
+
+version: '3.8'
+
+services:
+  # =====================================
+  # PostgreSQL 数据库服务
+  # =====================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: family-postgres
+    restart: always
+    environment:
+      # 数据库名
+      POSTGRES_DB: family_app
+      # 数据库用户名
+      POSTGRES_USER: family
+      # 数据库密码
+      POSTGRES_PASSWORD: family123
+    volumes:
+      # 数据持久化卷
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U family -d family_app"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =====================================
+  # 后端服务
+  # =====================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: family-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      # 数据源配置 - 使用服务名 postgres 作为数据库主机
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/family_app
+      SPRING_DATASOURCE_USERNAME: family
+      SPRING_DATASOURCE_PASSWORD: family123
+      # PostgreSQL 驱动
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      # JWT 密钥
+      JWT_SECRET: family-management-system-secret-key-2024
+      # 文件上传路径
+      FILE_UPLOAD_PATH: /app/uploads
+      # Flyway 配置
+      SPRING_FLYWAY_ENABLED: "true"
+      SPRING_FLYWAY_LOCATIONS: classpath:db/migration
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
+    volumes:
+      # 文件上传持久化卷
+      - uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # =====================================
+  # 前端服务
+  # =====================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: family-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+# =====================================
+# 数据卷定义
+# =====================================
+volumes:
+  # PostgreSQL 数据卷
+  postgres_data:
+    driver: local
+  # 文件上传存储卷
+  uploads:
+    driver: local

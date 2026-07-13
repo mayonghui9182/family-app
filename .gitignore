@@ -1,0 +1,50 @@
+# ===== Java / Maven =====
+target/
+*.jar
+*.war
+*.ear
+*.class
+*.log
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.swp
+*.swo
+*~
+.mvn/
+mvnw
+mvnw.cmd
+
+# ===== Node / Frontend =====
+node_modules/
+dist/
+.DS_Store
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ===== Environment =====
+.env
+.env.local
+.env.*.local
+
+# ===== Uploads / Data =====
+uploads/
+backup/
+*.sql
+*.sql.gz
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== IDE =====
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace

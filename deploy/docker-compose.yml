@@ -1,0 +1,99 @@
+# =====================================
+# 家庭管理系统 - 生产环境 Docker Compose
+# 适用于阿里云 ECS / 轻量应用服务器
+# =====================================
+
+version: '3.8'
+
+services:
+  # =====================================
+  # PostgreSQL 数据库
+  # =====================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: family-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-family_app}
+      POSTGRES_USER: ${POSTGRES_USER:-family}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-family123}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backup:/backup
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-family} -d ${POSTGRES_DB:-family_app}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # =====================================
+  # 后端服务
+  # =====================================
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    image: family-backend:latest
+    container_name: family-backend
+    restart: always
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      # 数据库配置
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-family_app}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-family}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-family123}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      # JWT 配置
+      JWT_SECRET: ${JWT_SECRET:-family-management-system-secret-key-change-me}
+      JWT_EXPIRE_HOURS: ${JWT_EXPIRE_HOURS:-24}
+      # 文件上传
+      FILE_UPLOAD_PATH: /app/uploads
+      # Flyway
+      SPRING_FLYWAY_ENABLED: "true"
+      SPRING_FLYWAY_LOCATIONS: classpath:db/migration
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
+      # 百度语音（可选）
+      BAIDU_SPEECH_APP_ID: ${BAIDU_SPEECH_APP_ID:-}
+      BAIDU_SPEECH_API_KEY: ${BAIDU_SPEECH_API_KEY:-}
+      BAIDU_SPEECH_SECRET_KEY: ${BAIDU_SPEECH_SECRET_KEY:-}
+      # JVM 参数
+      JAVA_OPTS: ${JAVA_OPTS:--Xms256m -Xmx512m}
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # =====================================
+  # 前端服务 (Nginx)
+  # =====================================
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    image: family-frontend:latest
+    container_name: family-frontend
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+      - uploads:/usr/share/nginx/html/uploads
+    depends_on:
+      - backend
+
+# =====================================
+# 数据卷
+# =====================================
+volumes:
+  postgres_data:
+    driver: local
+  uploads:
+    driver: local
