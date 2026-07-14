@@ -112,9 +112,9 @@ mkdir -p /etc/docker
 cat > /etc/docker/daemon.json <<'EOF'
 {
     "registry-mirrors": [
-        "https://docker.mirrors.ustc.edu.cn",
+        "https://docker.m.daocloud.io",
         "https://hub-mirror.c.163.com",
-        "https://mirror.baidubce.com"
+        "https://mirror.ccs.tencentyun.com"
     ],
     "log-driver": "json-file",
     "log-opts": {
