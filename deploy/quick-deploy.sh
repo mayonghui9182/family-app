@@ -77,14 +77,14 @@ EOF
     fi
     
     apt-get install -y -qq curl ca-certificates gnupg lsb-release
-    
-    curl -fsSL https://get.docker.com | bash || \
-    (echo -e "${YELLOW}  get.docker.com 无法访问，使用阿里云源安装...${NC}" && \
-     curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
-     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://mirrors.aliyun.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list && \
-     apt-get update -qq && \
-     apt-get install -y -qq docker-ce docker-ce-cli containerd.io)
-    
+
+    # 直接使用阿里云 Docker CE 源安装（国内服务器 get.docker.com 不可达）
+    echo -e "${YELLOW}  使用阿里云源安装 Docker...${NC}"
+    curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://mirrors.aliyun.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list
+    apt-get update -qq
+    apt-get install -y -qq docker-ce docker-ce-cli containerd.io
+
     if command -v docker &> /dev/null; then
         systemctl start docker
         systemctl enable docker
