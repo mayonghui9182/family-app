@@ -327,16 +327,17 @@ public class HouseholdItemService {
                 .distinct()
                 .collect(Collectors.toList());
 
-        Map<Long, HouseholdItem> itemMap = new HashMap<>();
+        Map<Long, HouseholdItem> tempItemMap = new HashMap<>();
         if (!itemIds.isEmpty()) {
             List<HouseholdItem> items = householdItemMapper.selectList(
                     new LambdaQueryWrapper<HouseholdItem>()
                             .in(HouseholdItem::getId, itemIds)
                             .eq(HouseholdItem::getFamilyId, familyId)
             );
-            itemMap = items.stream()
+            tempItemMap = items.stream()
                     .collect(Collectors.toMap(HouseholdItem::getId, item -> item));
         }
+        final Map<Long, HouseholdItem> itemMap = tempItemMap;
 
         List<Long> operatorIds = recordPage.getRecords().stream()
                 .map(ItemRecord::getOperatorId)
