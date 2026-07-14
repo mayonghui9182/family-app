@@ -106,14 +106,15 @@ else
     echo -e "${GREEN}  ✓ Docker Compose 已安装：$(docker compose version | cut -d' ' -f4)${NC}"
 fi
 
-# 配置 Docker 镜像加速
-if [ ! -f /etc/docker/daemon.json ]; then
-    mkdir -p /etc/docker
-    cat > /etc/docker/daemon.json <<'EOF'
+# 配置 Docker 镜像加速（强制覆盖，确保镜像源可用）
+echo -e "${YELLOW}  配置 Docker 镜像加速...${NC}"
+mkdir -p /etc/docker
+cat > /etc/docker/daemon.json <<'EOF'
 {
     "registry-mirrors": [
-        "https://registry.docker-cn.com",
-        "https://docker.mirrors.ustc.edu.cn"
+        "https://docker.mirrors.ustc.edu.cn",
+        "https://hub-mirror.c.163.com",
+        "https://mirror.baidubce.com"
     ],
     "log-driver": "json-file",
     "log-opts": {
@@ -122,10 +123,9 @@ if [ ! -f /etc/docker/daemon.json ]; then
     }
 }
 EOF
-    systemctl daemon-reload
-    systemctl restart docker
-    echo -e "${GREEN}  ✓ Docker 镜像加速已配置${NC}"
-fi
+systemctl daemon-reload
+systemctl restart docker
+echo -e "${GREEN}  ✓ Docker 镜像加速已配置${NC}"
 
 echo ""
 
