@@ -21,6 +21,23 @@ DEPLOY_DIR="$SCRIPT_DIR"
 
 cd "$DEPLOY_DIR"
 
+# ========== 自我更新 ==========
+if [ -d "$PROJECT_DIR/.git" ]; then
+    cd "$PROJECT_DIR"
+    if git fetch origin main > /dev/null 2>&1; then
+        LOCAL=$(git rev-parse HEAD)
+        REMOTE=$(git rev-parse origin/main)
+        
+        if [ "$LOCAL" != "$REMOTE" ]; then
+            echo -e "${YELLOW}🔄 检测到脚本有更新，正在自动更新...${NC}"
+            git checkout origin/main -- deploy/quick-deploy.sh
+            echo -e "${GREEN}✓ 脚本已更新，重新执行...${NC}"
+            exec bash "$DEPLOY_DIR/quick-deploy.sh"
+        fi
+    fi
+    cd "$DEPLOY_DIR"
+fi
+
 clear
 
 echo -e "${CYAN}"
