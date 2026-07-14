@@ -1,8 +1,5 @@
 # 后端 .dockerignore - Docker 构建时忽略的文件和目录
 
-# Maven 构建输出目录
-target/
-
 # 版本控制
 .git/
 .gitignore
@@ -35,3 +32,10 @@ logs/
 tmp/
 temp/
 *.tmp
+
+# Maven 源码相关（保留 target 目录中的 jar 包）
+src/
+pom.xml
+mvnw
+mvnw.cmd
+.mvn/
