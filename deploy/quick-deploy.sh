@@ -57,7 +57,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # ========== 第一步：环境检测 ==========
-echo -e "${BLUE}${BOLD}📦 [1/6] 环境检测与安装${NC}"
+echo -e "${BLUE}${BOLD}📦 [1/7] 环境检测与安装${NC}"
 echo "──────────────────────────────────────────────"
 
 # 检查 Docker
@@ -78,10 +78,10 @@ EOF
     
     apt-get install -y -qq curl ca-certificates gnupg lsb-release
     
-    curl -fsSL https://get.docker.com | bash > /dev/null 2>&1 || \
+    curl -fsSL https://get.docker.com | bash || \
     (echo -e "${YELLOW}  get.docker.com 无法访问，使用阿里云源安装...${NC}" && \
      curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
-     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://mirrors.aliyun.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://mirrors.aliyun.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list && \
      apt-get update -qq && \
      apt-get install -y -qq docker-ce docker-ce-cli containerd.io)
     
@@ -130,7 +130,7 @@ fi
 echo ""
 
 # ========== 第二步：拉取最新代码 ==========
-echo -e "${BLUE}${BOLD}🔄 [2/6] 拉取最新代码${NC}"
+echo -e "${BLUE}${BOLD}🔄 [2/7] 拉取最新代码${NC}"
 echo "──────────────────────────────────────────────"
 
 cd "$PROJECT_DIR"
@@ -157,7 +157,7 @@ cd "$DEPLOY_DIR"
 echo ""
 
 # ========== 第三步：配置环境变量 ==========
-echo -e "${BLUE}${BOLD}⚙️  [3/6] 配置环境变量${NC}"
+echo -e "${BLUE}${BOLD}⚙️  [3/7] 配置环境变量${NC}"
 echo "──────────────────────────────────────────────"
 
 if [ ! -f .env ]; then
@@ -187,9 +187,13 @@ echo ""
 echo -e "${BLUE}${BOLD}☕ [4/7] 构建后端 (Java)${NC}"
 echo "──────────────────────────────────────────────"
 
-# 检查 Java
-if ! command -v java &> /dev/null || ! java -version 2>&1 | grep -q "21"; then
-    echo -e "${YELLOW}  JDK 21 未安装，正在安装...${NC}"
+# 检查 Java（精确匹配主版本号21）
+JAVA_MAJOR_VERSION=""
+if command -v java &> /dev/null; then
+    JAVA_MAJOR_VERSION=$(java -version 2>&1 | head -1 | awk -F['"'] '{print $2}' | cut -d'.' -f1)
+fi
+if [ "$JAVA_MAJOR_VERSION" != "21" ]; then
+    echo -e "${YELLOW}  JDK 21 未安装（当前: ${JAVA_MAJOR_VERSION:-无}），正在安装...${NC}"
     
     if apt-cache search openjdk-21-jdk-headless | grep -q "openjdk-21-jdk-headless"; then
         apt-get install -y -qq openjdk-21-jdk-headless
@@ -215,27 +219,33 @@ if ! command -v mvn &> /dev/null; then
     echo -e "${GREEN}  ✓ Maven 安装完成${NC}"
 fi
 
-# 配置阿里云 Maven 镜像
+# 配置阿里云 Maven 镜像（强制覆盖，确保配置生效）
 MAVEN_SETTINGS_DIR="$HOME/.m2"
 MAVEN_SETTINGS_FILE="$MAVEN_SETTINGS_DIR/settings.xml"
-if [ ! -f "$MAVEN_SETTINGS_FILE" ]; then
-    mkdir -p "$MAVEN_SETTINGS_DIR"
-    cp "$DEPLOY_DIR/conf/settings.xml" "$MAVEN_SETTINGS_FILE"
-    echo -e "${GREEN}  ✓ 阿里云 Maven 镜像已配置${NC}"
-fi
+mkdir -p "$MAVEN_SETTINGS_DIR"
+cp -f "$DEPLOY_DIR/conf/settings.xml" "$MAVEN_SETTINGS_FILE"
+echo -e "${GREEN}  ✓ 阿里云 Maven 镜像已配置${NC}"
 
 echo -e "${YELLOW}  正在构建后端（代码已更新，强制重新构建）...${NC}"
 cd "$PROJECT_DIR/backend"
-mvn clean package -DskipTests -q
+mvn clean package -DskipTests 2>&1 | tee /tmp/maven-build.log
+MVN_EXIT=${PIPESTATUS[0]}
 cd "$DEPLOY_DIR"
+
+if [ "$MVN_EXIT" -ne 0 ]; then
+    echo -e "${RED}  ✗ 后端构建失败！${NC}"
+    echo -e "${YELLOW}  详细日志：cat /tmp/maven-build.log${NC}"
+    echo -e "${YELLOW}  请手动执行：cd backend && mvn clean package -DskipTests${NC}"
+    exit 1
+fi
 
 JAR_FILE=$(find "$PROJECT_DIR/backend/target" -name "*.jar" 2>/dev/null | grep -v sources | grep -v original | head -1)
 
 if [ -n "$JAR_FILE" ]; then
     echo -e "${GREEN}  ✓ 后端构建成功${NC}"
 else
-    echo -e "${RED}  ✗ 后端构建失败！${NC}"
-    echo -e "${YELLOW}  请手动执行：cd backend && mvn clean package -DskipTests${NC}"
+    echo -e "${RED}  ✗ 后端构建失败！未找到 JAR 文件${NC}"
+    echo -e "${YELLOW}  详细日志：cat /tmp/maven-build.log${NC}"
     exit 1
 fi
 
@@ -261,18 +271,26 @@ fi
 
 echo -e "${YELLOW}  安装依赖中...${NC}"
 cd "$PROJECT_DIR/frontend"
-pnpm install --frozen-lockfile > /dev/null 2>&1 || pnpm install > /dev/null 2>&1
+pnpm install --frozen-lockfile 2>&1 | tee /tmp/pnpm-install.log || pnpm install 2>&1 | tee /tmp/pnpm-install.log
+PNPM_EXIT=${PIPESTATUS[0]}
 
-echo -e "${YELLOW}  构建中...${NC}"
-pnpm build > /dev/null 2>&1
-cd "$DEPLOY_DIR"
-
-if [ -d "$PROJECT_DIR/frontend/dist" ]; then
-    echo -e "${GREEN}  ✓ 前端构建成功${NC}"
-else
-    echo -e "${RED}  ✗ 前端构建失败！${NC}"
+if [ "$PNPM_EXIT" -ne 0 ]; then
+    echo -e "${RED}  ✗ 前端依赖安装失败！${NC}"
+    echo -e "${YELLOW}  详细日志：cat /tmp/pnpm-install.log${NC}"
     exit 1
 fi
+
+echo -e "${YELLOW}  构建中...${NC}"
+pnpm build 2>&1 | tee /tmp/pnpm-build.log
+BUILD_EXIT=${PIPESTATUS[0]}
+cd "$DEPLOY_DIR"
+
+if [ "$BUILD_EXIT" -ne 0 ] || [ ! -d "$PROJECT_DIR/frontend/dist" ]; then
+    echo -e "${RED}  ✗ 前端构建失败！${NC}"
+    echo -e "${YELLOW}  详细日志：cat /tmp/pnpm-build.log${NC}"
+    exit 1
+fi
+echo -e "${GREEN}  ✓ 前端构建成功${NC}"
 
 echo ""
 
@@ -287,7 +305,14 @@ if docker compose ps -q &> /dev/null && [ -n "$(docker compose ps -q)" ]; then
 fi
 
 echo -e "${YELLOW}  启动服务中...${NC}"
-docker compose up -d --build > /dev/null 2>&1
+docker compose up -d --build 2>&1 | tee /tmp/docker-deploy.log
+COMPOSE_EXIT=${PIPESTATUS[0]}
+
+if [ "$COMPOSE_EXIT" -ne 0 ]; then
+    echo -e "${RED}  ✗ 服务启动失败！${NC}"
+    echo -e "${YELLOW}  详细日志：cat /tmp/docker-deploy.log${NC}"
+    exit 1
+fi
 
 echo -e "${GREEN}  ✓ 服务已启动${NC}"
 
