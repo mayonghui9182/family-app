@@ -88,8 +88,35 @@ fi
 
 echo ""
 
-# ========== 第二步：配置环境变量 ==========
-echo -e "${BLUE}${BOLD}⚙️  [2/6] 配置环境变量${NC}"
+# ========== 第二步：拉取最新代码 ==========
+echo -e "${BLUE}${BOLD}🔄 [2/6] 拉取最新代码${NC}"
+echo "──────────────────────────────────────────────"
+
+cd "$PROJECT_DIR"
+
+if [ -d ".git" ]; then
+    echo -e "${YELLOW}  正在拉取最新代码...${NC}"
+    git fetch origin
+    git reset --hard origin/main
+    echo -e "${GREEN}  ✓ 代码已更新到最新版本${NC}"
+else
+    echo -e "${YELLOW}  ⚠️  未检测到 Git 仓库，请手动上传代码${NC}"
+    echo -e "${YELLOW}     或执行：git init && git remote add origin https://github.com/mayonghui9182/family-app.git${NC}"
+    echo -e "${YELLOW}     然后重新运行本脚本${NC}"
+    echo ""
+    read -p "  是否继续？(y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 1
+    fi
+fi
+
+cd "$DEPLOY_DIR"
+
+echo ""
+
+# ========== 第三步：配置环境变量 ==========
+echo -e "${BLUE}${BOLD}⚙️  [3/6] 配置环境变量${NC}"
 echo "──────────────────────────────────────────────"
 
 if [ ! -f .env ]; then
@@ -115,118 +142,101 @@ fi
 
 echo ""
 
-# ========== 第三步：构建后端 ==========
-echo -e "${BLUE}${BOLD}☕ [3/6] 构建后端 (Java)${NC}"
+# ========== 第四步：构建后端 ==========
+echo -e "${BLUE}${BOLD}☕ [4/7] 构建后端 (Java)${NC}"
 echo "──────────────────────────────────────────────"
+
+# 检查 Java
+if ! command -v java &> /dev/null || ! java -version 2>&1 | grep -q "21"; then
+    echo -e "${YELLOW}  JDK 21 未安装，正在安装...${NC}"
+    
+    if apt-cache search openjdk-21-jdk-headless | grep -q "openjdk-21-jdk-headless"; then
+        apt-get install -y -qq openjdk-21-jdk-headless
+    else
+        apt-get install -y -qq wget apt-transport-https gnupg
+        wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --dearmor -o /usr/share/keyrings/adoptium-archive-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/adoptium-archive-keyring.gpg] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list
+        apt-get update -qq
+        apt-get install -y -qq temurin-21-jdk
+        echo 'export JAVA_HOME=/usr/lib/jvm/temurin-21-jdk-amd64' >> /etc/profile
+        echo 'export PATH=$JAVA_HOME/bin:$PATH' >> /etc/profile
+        export JAVA_HOME=/usr/lib/jvm/temurin-21-jdk-amd64
+        export PATH=$JAVA_HOME/bin:$PATH
+    fi
+    
+    echo -e "${GREEN}  ✓ JDK 21 安装完成${NC}"
+fi
+
+# 检查 Maven
+if ! command -v mvn &> /dev/null; then
+    echo -e "${YELLOW}  Maven 未安装，正在安装...${NC}"
+    apt-get install -y -qq maven
+    echo -e "${GREEN}  ✓ Maven 安装完成${NC}"
+fi
+
+# 配置阿里云 Maven 镜像
+MAVEN_SETTINGS_DIR="$HOME/.m2"
+MAVEN_SETTINGS_FILE="$MAVEN_SETTINGS_DIR/settings.xml"
+if [ ! -f "$MAVEN_SETTINGS_FILE" ]; then
+    mkdir -p "$MAVEN_SETTINGS_DIR"
+    cp "$DEPLOY_DIR/conf/settings.xml" "$MAVEN_SETTINGS_FILE"
+    echo -e "${GREEN}  ✓ 阿里云 Maven 镜像已配置${NC}"
+fi
+
+echo -e "${YELLOW}  正在构建后端（代码已更新，强制重新构建）...${NC}"
+cd "$PROJECT_DIR/backend"
+mvn clean package -DskipTests -q
+cd "$DEPLOY_DIR"
 
 JAR_FILE=$(find "$PROJECT_DIR/backend/target" -name "*.jar" 2>/dev/null | grep -v sources | grep -v original | head -1)
 
 if [ -n "$JAR_FILE" ]; then
-    echo -e "${GREEN}  ✓ 找到 jar 包：$(basename "$JAR_FILE")${NC}"
+    echo -e "${GREEN}  ✓ 后端构建成功${NC}"
 else
-    echo -e "${YELLOW}  未找到 jar 包，尝试构建...${NC}"
-    
-    # 检查 Java
-    if ! command -v java &> /dev/null || ! java -version 2>&1 | grep -q "21"; then
-        echo -e "${YELLOW}  JDK 21 未安装，正在安装...${NC}"
-        
-        # 尝试从默认源安装
-        if apt-cache search openjdk-21-jdk-headless | grep -q "openjdk-21-jdk-headless"; then
-            apt-get install -y -qq openjdk-21-jdk-headless
-        else
-            # 使用 Adoptium Temurin 安装 JDK 21
-            apt-get install -y -qq wget apt-transport-https gnupg
-            wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --dearmor -o /usr/share/keyrings/adoptium-archive-keyring.gpg
-            echo "deb [signed-by=/usr/share/keyrings/adoptium-archive-keyring.gpg] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list
-            apt-get update -qq
-            apt-get install -y -qq temurin-21-jdk
-            # 设置 JAVA_HOME
-            echo 'export JAVA_HOME=/usr/lib/jvm/temurin-21-jdk-amd64' >> /etc/profile
-            echo 'export PATH=$JAVA_HOME/bin:$PATH' >> /etc/profile
-            export JAVA_HOME=/usr/lib/jvm/temurin-21-jdk-amd64
-            export PATH=$JAVA_HOME/bin:$PATH
-        fi
-        
-        echo -e "${GREEN}  ✓ JDK 21 安装完成：$(java -version 2>&1 | head -1)${NC}"
-    fi
-    
-    # 检查 Maven
-    if ! command -v mvn &> /dev/null; then
-        echo -e "${YELLOW}  Maven 未安装，正在安装...${NC}"
-        apt-get install -y -qq maven
-        echo -e "${GREEN}  ✓ Maven 安装完成${NC}"
-    fi
-    
-    # 配置阿里云 Maven 镜像
-    MAVEN_SETTINGS_DIR="$HOME/.m2"
-    MAVEN_SETTINGS_FILE="$MAVEN_SETTINGS_DIR/settings.xml"
-    if [ ! -f "$MAVEN_SETTINGS_FILE" ]; then
-        mkdir -p "$MAVEN_SETTINGS_DIR"
-        cp "$DEPLOY_DIR/conf/settings.xml" "$MAVEN_SETTINGS_FILE"
-        echo -e "${GREEN}  ✓ 阿里云 Maven 镜像已配置${NC}"
-    fi
-    
-    echo -e "${YELLOW}  正在构建后端（首次可能需要几分钟）...${NC}"
-    cd "$PROJECT_DIR/backend"
-    mvn clean package -DskipTests -q
-    cd "$DEPLOY_DIR"
-    
-    JAR_FILE=$(find "$PROJECT_DIR/backend/target" -name "*.jar" 2>/dev/null | grep -v sources | grep -v original | head -1)
-    
-    if [ -n "$JAR_FILE" ]; then
-        echo -e "${GREEN}  ✓ 后端构建成功${NC}"
-    else
-        echo -e "${RED}  ✗ 后端构建失败！${NC}"
-        echo -e "${YELLOW}  请手动执行：cd backend && mvn clean package -DskipTests${NC}"
-        exit 1
-    fi
+    echo -e "${RED}  ✗ 后端构建失败！${NC}"
+    echo -e "${YELLOW}  请手动执行：cd backend && mvn clean package -DskipTests${NC}"
+    exit 1
 fi
 
 echo ""
 
-# ========== 第四步：构建前端 ==========
-echo -e "${BLUE}${BOLD}💻 [4/6] 构建前端 (Vue)${NC}"
+# ========== 第五步：构建前端 ==========
+echo -e "${BLUE}${BOLD}💻 [5/7] 构建前端 (Vue)${NC}"
 echo "──────────────────────────────────────────────"
 
+# 检查 Node.js
+if ! command -v node &> /dev/null; then
+    echo -e "${YELLOW}  Node.js 未安装，正在安装...${NC}"
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - > /dev/null 2>&1
+    apt-get install -y -qq nodejs
+    echo -e "${GREEN}  ✓ Node.js 安装完成${NC}"
+fi
+
+# 检查 pnpm
+if ! command -v pnpm &> /dev/null; then
+    npm install -g pnpm > /dev/null 2>&1
+    echo -e "${GREEN}  ✓ pnpm 安装完成${NC}"
+fi
+
+echo -e "${YELLOW}  安装依赖中...${NC}"
+cd "$PROJECT_DIR/frontend"
+pnpm install --frozen-lockfile > /dev/null 2>&1 || pnpm install > /dev/null 2>&1
+
+echo -e "${YELLOW}  构建中...${NC}"
+pnpm build > /dev/null 2>&1
+cd "$DEPLOY_DIR"
+
 if [ -d "$PROJECT_DIR/frontend/dist" ]; then
-    echo -e "${GREEN}  ✓ 前端已构建，跳过${NC}"
+    echo -e "${GREEN}  ✓ 前端构建成功${NC}"
 else
-    echo -e "${YELLOW}  前端未构建，开始构建...${NC}"
-    
-    # 检查 Node.js
-    if ! command -v node &> /dev/null; then
-        echo -e "${YELLOW}  Node.js 未安装，正在安装...${NC}"
-        curl -fsSL https://deb.nodesource.com/setup_20.x | bash - > /dev/null 2>&1
-        apt-get install -y -qq nodejs
-        echo -e "${GREEN}  ✓ Node.js 安装完成：$(node -v)${NC}"
-    fi
-    
-    # 检查 pnpm
-    if ! command -v pnpm &> /dev/null; then
-        npm install -g pnpm > /dev/null 2>&1
-        echo -e "${GREEN}  ✓ pnpm 安装完成${NC}"
-    fi
-    
-    echo -e "${YELLOW}  安装依赖中...${NC}"
-    cd "$PROJECT_DIR/frontend"
-    pnpm install --frozen-lockfile > /dev/null 2>&1 || pnpm install > /dev/null 2>&1
-    
-    echo -e "${YELLOW}  构建中...${NC}"
-    pnpm build > /dev/null 2>&1
-    cd "$DEPLOY_DIR"
-    
-    if [ -d "$PROJECT_DIR/frontend/dist" ]; then
-        echo -e "${GREEN}  ✓ 前端构建成功${NC}"
-    else
-        echo -e "${RED}  ✗ 前端构建失败！${NC}"
-        exit 1
-    fi
+    echo -e "${RED}  ✗ 前端构建失败！${NC}"
+    exit 1
 fi
 
 echo ""
 
-# ========== 第五步：启动服务 ==========
-echo -e "${BLUE}${BOLD}🚀 [5/6] 启动服务${NC}"
+# ========== 第六步：启动服务 ==========
+echo -e "${BLUE}${BOLD}🚀 [6/7] 启动服务${NC}"
 echo "──────────────────────────────────────────────"
 
 # 停止旧服务（如果有）
@@ -242,8 +252,8 @@ echo -e "${GREEN}  ✓ 服务已启动${NC}"
 
 echo ""
 
-# ========== 第六步：等待就绪 ==========
-echo -e "${BLUE}${BOLD}⏳ [6/6] 等待服务就绪${NC}"
+# ========== 第七步：等待就绪 ==========
+echo -e "${BLUE}${BOLD}⏳ [7/7] 等待服务就绪${NC}"
 echo "──────────────────────────────────────────────"
 
 # 获取数据库配置
