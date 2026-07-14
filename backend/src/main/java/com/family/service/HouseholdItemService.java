@@ -344,15 +344,16 @@ public class HouseholdItemService {
                 .distinct()
                 .collect(Collectors.toList());
 
-        Map<Long, String> operatorNameMap = new HashMap<>();
+        Map<Long, String> tempMap = new HashMap<>();
         if (!operatorIds.isEmpty()) {
             List<User> users = userMapper.selectList(
                     new LambdaQueryWrapper<User>()
                             .in(User::getId, operatorIds)
             );
-            operatorNameMap = users.stream()
+            tempMap = users.stream()
                     .collect(Collectors.toMap(User::getId, u -> u.getNickname() != null ? u.getNickname() : u.getUsername()));
         }
+        final Map<Long, String> operatorNameMap = tempMap;
 
         List<ItemRecordVO> records = recordPage.getRecords().stream()
                 .map(record -> {
