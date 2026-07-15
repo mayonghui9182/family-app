@@ -323,7 +323,15 @@ echo -e "${BLUE}${BOLD}⏳ [7/7] 等待服务就绪${NC}"
 echo "──────────────────────────────────────────────"
 
 # 获取数据库配置
-source .env
+# 加载环境变量（安全方式：跳过注释和空行，避免值含空格导致source报错）
+set -a
+while IFS='=' read -r key value; do
+    [[ -z "$key" || "$key" =~ ^[[:space:]]*# ]] && continue
+    key=$(echo "$key" | xargs)
+    value=$(echo "$value" | sed 's/^"//;s/"$//' | sed "s/^'//;s/'$//")
+    export "$key=$value"
+done < .env
+set +a
 DB_USER=${POSTGRES_USER:-family}
 DB_NAME=${POSTGRES_DB:-family_app}
 
