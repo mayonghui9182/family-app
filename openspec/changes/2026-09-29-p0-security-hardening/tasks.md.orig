@@ -1,0 +1,20 @@
+## 1. 网关边界
+
+- [ ] 1.1 在 Nginx 中拒绝公网 `/api/internal` 全前缀，并用配置检查验证拒绝规则优先于通用 `/api/` 代理
+- [ ] 1.2 为 `/api/work-tasks/**` 增加主应用登录态子请求鉴权，并验证匿名请求不会进入 task-planner、REST 与 SSE 均保留代理配置
+
+## 2. 密钥与部署凭据
+
+- [ ] 2.1 移除 Spring 内部密钥默认值、为测试显式提供测试密钥，并运行后端测试验证内部调用契约
+- [ ] 2.2 让 agent-service 与 wechat-service 拒绝空内部密钥，增加配置测试并分别运行 pytest
+- [ ] 2.3 将主 Compose 的 `INTERNAL_API_SECRET` 与 `TP_POSTGRES_PASSWORD` 改为必填，更新 `.env.example` 与部署文档并验证缺失变量时配置解析失败
+- [ ] 2.4 使用显式测试密钥和数据库口令运行 `docker compose config`，验证完整配置可解析
+
+## 3. 回归验证
+
+- [ ] 3.1 运行前端测试与生产构建，确认网关安全改动未破坏工作任务入口代码；同步修复已知侧栏菜单数量测试漂移
+- [ ] 3.2 运行 OpenSpec strict 校验与差异检查，确认本 change 合规且没有空白错误
+
+## 4. 交接
+
+- [ ] 4.1 更新 `.handoffs/current.md` 与 `handoffs/current.md`，记录安全边界、必填变量、验证证据和下一波 P1 工作

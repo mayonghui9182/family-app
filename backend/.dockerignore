@@ -1,41 +1,14 @@
-# 后端 .dockerignore - Docker 构建时忽略的文件和目录
+# Host-only Gradle caches — huge, never needed in the build context.
+.gradle
 
-# 版本控制
-.git/
-.gitignore
-.gitattributes
+# Intermediate build artefacts — only build/libs/*.jar is needed by the fast path.
+build/classes
+build/generated
+build/reports
+build/resources
+build/test-results
+build/tmp
 
-# 文档
-README.md
-*.md
-
-# 环境配置
-.env
-.env.*
-
-# IDE 配置
-.idea/
-.vscode/
-*.iml
-*.ipr
-*.iws
-
-# 系统文件
+# Not needed for either path.
 .DS_Store
-Thumbs.db
-
-# 日志文件
-logs/
 *.log
-
-# 临时文件
-tmp/
-temp/
-*.tmp
-
-# Maven 源码相关（保留 target 目录中的 jar 包）
-src/
-pom.xml
-mvnw
-mvnw.cmd
-.mvn/

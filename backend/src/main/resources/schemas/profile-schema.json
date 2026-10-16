@@ -1,0 +1,71 @@
+{
+  "BABY": {
+    "month_age": {"type": "int", "range": [0, 240], "desc": "月龄"},
+    "weight_kg": {"type": "number", "range": [0, 50], "desc": "体重 kg（允许 .1 小数）"},
+    "height_cm": {"type": "number", "range": [0, 150], "desc": "身高 cm（允许 .1 小数）"},
+    "allergy_list": {"type": "string[]", "desc": "过敏食物清单"},
+    "chronic_diseases": {"type": "string[]", "desc": "慢性疾病"},
+    "diet_preferences": {"type": "string[]", "desc": "饮食偏好（配方奶/辅食等）"},
+    "milk_brand": {"type": "string", "desc": "奶粉品牌"},
+    "food_brand": {"type": "string", "desc": "辅食品牌"},
+    "wake_up_time": {"type": "time", "desc": "早上起床"},
+    "nap_start": {"type": "time", "desc": "午睡开始"},
+    "nap_end": {"type": "time", "desc": "午睡结束"},
+    "bed_time": {"type": "time", "desc": "晚睡"},
+    "vaccine_schedule": {"type": "string", "desc": "疫苗备注"},
+    "vaccines_done": {"type": "string[]", "desc": "已完成疫苗（列表）"},
+    "vaccines_due": {"type": "string[]", "desc": "待接种疫苗（列表）"},
+    "common_meds": {"type": "string[]", "desc": "常用药/保健"}
+  },
+  "ELDER": {
+    "birth_date": {"type": "date", "desc": "出生日期"},
+    "age": {"type": "int", "range": [50, 120], "desc": "年龄"},
+    "blood_type": {"type": "string", "desc": "血型（如 A+/O-/AB+）"},
+    "chronic_diseases": {"type": "string[]", "desc": "慢病"},
+    "common_meds": {"type": "string[]", "desc": "常用药"},
+    "checkup_cycle_weeks": {"type": "int", "range": [1, 208], "desc": "体检周期周"},
+    "checkup_due_date": {"type": "date", "desc": "下次体检日期"},
+    "mobility": {"type": "enum", "values": ["SELF", "HALF", "HELP"], "desc": "自理能力"},
+    "diet_restrictions": {"type": "string[]", "desc": "饮食禁忌"},
+    "diet_preferences": {"type": "string[]", "desc": "饮食偏好"},
+    "allergy_list": {"type": "string[]", "desc": "过敏食物/药物"},
+    "exercise_habits": {"type": "string[]", "desc": "运动习惯"},
+    "blood_pressure_target_systolic": {"type": "int", "range": [80, 200], "desc": "血压目标-高压（mmHg）"},
+    "blood_pressure_target_diastolic": {"type": "int", "range": [40, 140], "desc": "血压目标-低压（mmHg）"},
+    "blood_pressure_target": {"type": "string", "desc": "血压目标（自由文本，与数值字段二选一填都可以）"}
+  },
+  "ADULT": {
+    "birth_date": {"type": "date", "desc": "出生日期"},
+    "age": {"type": "int", "range": [18, 120], "desc": "年龄"},
+    "blood_type": {"type": "string", "desc": "血型"},
+    "diet_preferences": {"type": "string[]", "desc": "饮食偏好"},
+    "allergy_list": {"type": "string[]", "desc": "过敏食物/药物"},
+    "chronic_diseases": {"type": "string[]", "desc": "慢性疾病"},
+    "common_meds": {"type": "string[]", "desc": "常用药物/补剂"},
+    "commute_mode": {"type": "string", "desc": "通勤方式"},
+    "work_start_time": {"type": "time", "desc": "上班时间"},
+    "work_end_time": {"type": "time", "desc": "下班时间"},
+    "exercise_habits": {"type": "string[]", "desc": "运动习惯"},
+    "checkup_due_date": {"type": "date", "desc": "下次体检日期"}
+  },
+  "PET": {
+    "breed": {"type": "string", "desc": "品种（金毛/英短/布偶等）"},
+    "birth_date": {"type": "date", "desc": "出生日期/领养估计日期"},
+    "age_years": {"type": "number", "range": [0, 80], "desc": "年龄（岁，允许 .1 小数）"},
+    "weight_kg": {"type": "number", "range": [0, 100], "desc": "体重 kg"},
+    "vaccine_last_date": {"type": "date", "desc": "上次疫苗日期"},
+    "last_vet_date": {"type": "date", "desc": "上次体检日期"},
+    "next_vet_date": {"type": "date", "desc": "下次体检/疫苗日期"},
+    "deworm_cycle_weeks": {"type": "int", "range": [1, 104], "desc": "驱虫周期周"},
+    "vet_contact": {"type": "string", "desc": "兽医联系方式"},
+    "diet_habit_note": {"type": "string", "desc": "饮食习惯备注"},
+    "allergy_list": {"type": "string[]", "desc": "过敏食物/药物"},
+    "chronic_diseases": {"type": "string[]", "desc": "慢性疾病"},
+    "diet_preferences": {"type": "string[]", "desc": "饮食偏好/处方粮"}
+  },
+  "OTHER": {
+    "birth_date": {"type": "date", "desc": "出生日期/纪念日期"},
+    "notes": {"type": "string", "desc": "自由文本"},
+    "tags_custom": {"type": "string[]", "desc": "自定义标签"}
+  }
+}

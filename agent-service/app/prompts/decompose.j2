@@ -1,0 +1,33 @@
+{% if few_shot %}
+以下是这个家庭最近完成过的类似任务，拆解风格请保持一致：
+{% for f in few_shot %}- {{ f }}
+{% endfor %}
+{% else %}
+📌 无历史参考，请基于通用生活经验给出稳妥的通用建议。
+{% endif %}
+{% if template_hint %}该消息匹配到家庭常用模板「{{ template_hint }}」，可参考其步骤结构。{% endif %}
+{% if workload_note %}注意：{{ workload_note }}{% endif %}
+{% if weather is defined and weather != 'unknown' %}今日天气：{{ weather }}，涉及户外活动的子任务请据此给出具体建议（如"今天晴天，适合带宝宝去公园"或"今日下雨，建议改在室内活动"）。{% endif %}
+{% if profiles %}
+家庭可用成员档案（assignee_profile_id 必须从这些 id 中选，无合适人选给 null）：
+{% for p in profiles %}- id={{ p.id }} 姓名={{ p.name }}{% if p.relation %} 关系={{ p.relation }}{% endif %}{% if p.tags %} 标签={{ p.tags | join(',') }}{% endif %}
+{% endfor %}
+{% else %}
+家庭暂无成员档案，assignee_profile_id 统一给 null。
+{% endif %}
+{% if categories %}
+家庭可选分类（category_id 必须从这些 id 中选，无匹配给 null）：
+{% for c in categories %}- id={{ c.id }} 名称={{ c.name }}
+{% endfor %}
+{% endif %}
+今天是 {{ today }}（yyyy-MM-dd）。due_date 必须是 yyyy-MM-dd 格式的未来日期字符串。
+请把下面的任务拆解为 3 到 7 条子任务：
+用户已明确填写的分类、执行人、优先级和日期是约束；本轮修改要求优先于历史草稿。
+只调整用户要求改变的部分，保留原始事项，不要把“改到下周”等修改指令当成新的独立任务。
+缺少关键安排时在 notes 中明确待确认事项，不编造人员或天气。
+任务标题：{{ title }}
+任务描述：{{ description or "（无）" }}
+只输出如下 JSON（不要多余文字）：
+{"title": "...", "description": "...", "priority": "HIGH|MEDIUM|LOW", "category_id": 数字或null,
+ "subtasks": [{"title": "...", "description": "...", "sort_order": 1, "category_id": 数字或null, "due_date": "yyyy-MM-dd"或null, "assignee_profile_id": 数字或null}],
+ "notes": ["给用户的温馨提示，最多两条"]}

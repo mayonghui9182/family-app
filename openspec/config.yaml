@@ -1,0 +1,46 @@
+schema: spec-driven
+
+# Project context (shown to AI when creating artifacts)
+context: |
+  ## 项目
+  family-app —— 家庭事项管理 app
+
+  ## 业务领域
+  家庭日常协作与生活管理。核心场景：
+  - 每日任务管理（家务、待办、提醒）
+  - 家庭成员协作（分工、共享日历）
+  - 孩子日常照顾（作息、学习、成长记录）
+  - 家庭采买（购物清单、库存、开销）
+  - AI 建议模块（基于以上数据给家庭运营建议，后续接入）
+
+  ## 技术栈
+  - 后端：Java（主业务）+ Python（AI 模块）
+  - 前端：Vue
+  - 数据库：PostgreSQL（主存储）+ Redis（缓存/队列）
+  - 部署：Docker（docker-compose 编排）
+  - 后续按需增加组件（如消息队列、对象存储等）
+
+  ## 约定
+  - Conventional Commits（feat / fix / chore / docs / refactor / test）
+  - spec-driven：所有功能先写 OpenSpec change，再落地代码
+  - Harness 控制面（.harness/ + .handoffs/）：每次会话先读 .handoffs/current.md 恢复状态
+
+# Per-artifact rules (optional)
+rules:
+  proposal:
+    - 必须包含「非目标 (Non-goals)」段，防止范围蔓延
+    - 涉及 AI 模块的 change 必须说明数据流（输入/模型/输出）
+  tasks:
+    - 每个任务拆分粒度：单个任务可在一次会话内完成并验证
+    - 涉及 DB schema 的任务必须包含回滚策略
+
+# Per-operation guidance (optional)
+operations:
+  apply:
+    guidance:
+      - Java 改动后必须跑 `./gradlew test` 确认通过
+      - Vue 改动后必须跑 `npm run build`（Vite）确认无报错
+      - DB 改动后必须验证 migration 可正向 + 逆向回滚
+  archive:
+    guidance:
+    - 归档前总结本次 change 的核心决策和遗留问题，写入 .handoffs/current.md

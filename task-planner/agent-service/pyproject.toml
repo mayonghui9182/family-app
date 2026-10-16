@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "task-planner-agent-service"
+version = "0.1.0"
+description = "工作任务计划系统 agent-service：LLM 拆解、MCP Client 与每日总结调度"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "pydantic>=2.6",
+    "pydantic-settings>=2.2",
+    "httpx>=0.27",
+    "openai>=1.30",
+    "jinja2>=3.1",
+    "apscheduler>=3.10,<4",
+    # MCP SDK 固定在 1.x 区间：2.x 为破坏性升级，MVP 以稳定优先（design.md R3）
+    "mcp>=1.12,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
+# src 布局：包名即 src，容器内安装后以 `uvicorn src.main:app` 启动
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]

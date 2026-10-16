@@ -1,0 +1,50 @@
+你是任务拆解助手。请把用户的任务拆解成具体、可执行的子待办。
+
+## 用户任务
+{{ message }}
+
+## 拆解数量规则
+1. 必须拆解出 2 到 8 条子待办，每条都要具体、可执行，避免空泛。
+2. 子待办按执行顺序排列。
+
+## 历史参考（优先参考历史模式）
+{% if few_shot_tasks %}
+以下是同分类下已完成任务及其子待办，请优先参考这些历史模式：
+{% for item in few_shot_tasks %}
+- 历史任务「{{ item.title }}」：{{ item.subtasks | join('、') }}
+{% endfor %}
+{% else %}
+该分类暂无历史已完成任务，无历史参考。
+{% endif %}
+
+## 规则模板
+{% if matched_template %}
+预期步骤数：{{ matched_template.estimated_subtask_count }}（仅作参考，仍须满足 2–8 条）。
+模板注意事项：{{ matched_template.notes }}
+参考模板「{{ matched_template.name }}」（常见步骤：{{ matched_template.common_steps | join('、') }}）。请按该模板拆解，但可根据本次任务实际情况有所调整。
+{% else %}
+无匹配模板，无历史参考，请基于你的通用能力冷启动拆解。
+{% endif %}
+
+## 当前工作负载
+{% if workload %}
+- 未完成任务数：{{ workload.unfinished_count }}
+- 优先级分布：{{ workload.priority_distribution }}
+- 即将到期任务数：{{ workload.due_soon_count }}
+{% if workload.high_priority_count is defined and workload.high_priority_count >= 3 %}
+注意：当前有 {{ workload.high_priority_count }} 个高优先级未完成任务，负载较高，请在 agent_reasoning 中提醒用户合理安排。
+{% endif %}
+{% else %}
+（负载数据暂不可用）
+{% endif %}
+
+## 输出格式
+只输出一个 JSON 对象，不要输出任何其他内容：
+{
+  "task_title": "简洁的任务标题",
+  "task_description": "任务描述",
+  "subtasks": [
+    {"title": "子待办标题", "description": "具体说明", "notes": "注意事项，可为空字符串"}
+  ],
+  "agent_reasoning": "拆解决策说明：说明参考了哪个模板或历史、是否有所调整、负载提醒等"
+}

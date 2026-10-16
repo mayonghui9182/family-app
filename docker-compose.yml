@@ -1,88 +1,337 @@
-# Docker Compose 配置文件 - 家庭管理系统
-# 适用于家庭 NAS / 树莓派部署
-
-version: '3.8'
-
 services:
-  # =====================================
-  # PostgreSQL 数据库服务
-  # =====================================
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: familyapp-nginx
+    restart: unless-stopped
+    networks:
+      public-tier:
+        # 密码找回仅信任这一个固定网关地址传入的 X-Real-IP。
+        ipv4_address: 172.29.0.2
+    ports:
+      - "${NGINX_PORT:-80}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/nginx-health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    environment:
+      TZ: Asia/Shanghai
+
   postgres:
     image: postgres:16-alpine
-    container_name: family-postgres
-    restart: always
-    environment:
-      # 数据库名
-      POSTGRES_DB: family_app
-      # 数据库用户名
-      POSTGRES_USER: family
-      # 数据库密码
-      POSTGRES_PASSWORD: family123
-    volumes:
-      # 数据持久化卷
-      - postgres_data:/var/lib/postgresql/data
+    container_name: familyapp-postgres
+    restart: unless-stopped
+    networks:
+      - infra-tier
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-familyapp}
+      POSTGRES_USER: ${POSTGRES_USER:-familyapp_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-placeholder-postgres-password}
+      TZ: Asia/Shanghai
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U family -d family_app"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-familyapp_user} -d ${POSTGRES_DB:-familyapp}"]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
 
-  # =====================================
-  # 后端服务
-  # =====================================
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: family-backend
-    restart: always
-    ports:
-      - "8080:8080"
-    environment:
-      # 数据源配置 - 使用服务名 postgres 作为数据库主机
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/family_app
-      SPRING_DATASOURCE_USERNAME: family
-      SPRING_DATASOURCE_PASSWORD: family123
-      # PostgreSQL 驱动
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
-      # JWT 密钥
-      JWT_SECRET: family-management-system-secret-key-2024
-      # 文件上传路径
-      FILE_UPLOAD_PATH: /app/uploads
-      # Flyway 配置
-      SPRING_FLYWAY_ENABLED: "true"
-      SPRING_FLYWAY_LOCATIONS: classpath:db/migration
-      SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
-    volumes:
-      # 文件上传持久化卷
-      - uploads:/app/uploads
+    container_name: familyapp-backend
+    restart: unless-stopped
+    networks:
+      infra-tier: {}
+      public-tier:
+        # 为 nginx 的可信代理地址 172.29.0.2 预留空间。
+        ipv4_address: 172.29.0.10
+    # 对外端口已收敛至 nginx，内部通过 compose DNS 访问 backend:8080
     depends_on:
       postgres:
         condition: service_healthy
+    environment:
+      TZ: Asia/Shanghai
+      JAVA_HOME: /opt/java/openjdk
+      SPRING_PROFILES_ACTIVE: prod
+      # stringtype=unspecified：日程 recurrence 的 JSON 转换器以字符串绑定 jsonb 列，缺少该参数生产 PG 会报 42804
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-familyapp}?stringtype=unspecified
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-familyapp_user}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-placeholder-postgres-password}
+      # Change 2 内部 API 密钥（后端 <-> Agent 双向校验，X-Internal-Secret）
+      PASSWORD_RESET_TRUSTED_PROXIES: ${PASSWORD_RESET_TRUSTED_PROXIES:-172.29.0.2}
+      PASSWORD_RESET_ENABLED: ${PASSWORD_RESET_ENABLED:-false}
+      PASSWORD_RESET_PUBLIC_URL: ${PASSWORD_RESET_PUBLIC_URL:-}
+      PASSWORD_RESET_FROM: ${PASSWORD_RESET_FROM:-}
+      PASSWORD_RESET_SMTP_HOST: ${PASSWORD_RESET_SMTP_HOST:-}
+      PASSWORD_RESET_SMTP_PORT: ${PASSWORD_RESET_SMTP_PORT:-587}
+      PASSWORD_RESET_SMTP_USERNAME: ${PASSWORD_RESET_SMTP_USERNAME:-}
+      PASSWORD_RESET_SMTP_PASSWORD: ${PASSWORD_RESET_SMTP_PASSWORD:-}
+      PASSWORD_RESET_STARTTLS: ${PASSWORD_RESET_STARTTLS:-true}
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?INTERNAL_API_SECRET must be set}
+      # Change 3/4 服务调用基座（Compose DNS 内部域名，走 infra-tier 不经过公网）
+      AGENT_SERVICE_BASE_URL: ${AGENT_SERVICE_BASE_URL:-http://agent-service:8700}
+      TOOL_SERVICE_BASE_URL: ${TOOL_SERVICE_BASE_URL:-http://tool-service:8800}
+      # 功能回退开关（AI 拆解入口按钮 + AgentProxyController 50310 守卫）
+      AI_DECOMPOSE_ENABLED: ${AI_DECOMPOSE_ENABLED:-true}
+      # Change 12 微信模板消息推送基座（infra-tier compose DNS；总开关留 false 时全量静默降级）
+      WECHAT_SERVICE_BASE_URL: ${WECHAT_SERVICE_BASE_URL:-http://wechat-service:8900}
+      WECHAT_NOTIFY_ENABLED: ${WECHAT_NOTIFY_ENABLED:-true}
+      WECHAT_INTAKE_ENABLED: ${WECHAT_INTAKE_ENABLED:-false}
+      WECHAT_INTAKE_POLL_MS: ${WECHAT_INTAKE_POLL_MS:-5000}
+      WECHAT_INTAKE_MAX_ATTEMPTS: ${WECHAT_INTAKE_MAX_ATTEMPTS:-3}
+      WECHAT_CONVERSATION_ENABLED: ${WECHAT_CONVERSATION_ENABLED:-false}
+      WECHAT_CONVERSATION_WORKER_ENABLED: ${WECHAT_CONVERSATION_WORKER_ENABLED:-false}
+      WECHAT_CONVERSATION_POLL_MS: ${WECHAT_CONVERSATION_POLL_MS:-1000}
+      WECHAT_CONVERSATION_POLL_INITIAL_MS: ${WECHAT_CONVERSATION_POLL_INITIAL_MS:-15000}
+      WECHAT_CONVERSATION_LEASE_SECONDS: ${WECHAT_CONVERSATION_LEASE_SECONDS:-120}
+      WECHAT_CONVERSATION_TTL_HOURS: ${WECHAT_CONVERSATION_TTL_HOURS:-24}
+      WECHAT_CONVERSATION_MAX_ATTEMPTS: ${WECHAT_CONVERSATION_MAX_ATTEMPTS:-5}
+      WECHAT_CONVERSATION_RETRY_INITIAL_MS: ${WECHAT_CONVERSATION_RETRY_INITIAL_MS:-1000}
+      WECHAT_CONVERSATION_RETRY_MAX_MS: ${WECHAT_CONVERSATION_RETRY_MAX_MS:-60000}
+      WECHAT_CONVERSATION_PROGRESS_FAST_MS: ${WECHAT_CONVERSATION_PROGRESS_FAST_MS:-2500}
+      WECHAT_CONVERSATION_MAX_REPLY_SEGMENTS: ${WECHAT_CONVERSATION_MAX_REPLY_SEGMENTS:-3}
+      WECHAT_CONVERSATION_SUMMARY_EVERY_TURNS: ${WECHAT_CONVERSATION_SUMMARY_EVERY_TURNS:-6}
+      WECHAT_CONVERSATION_SUMMARY_CONTEXT_CHARS: ${WECHAT_CONVERSATION_SUMMARY_CONTEXT_CHARS:-6000}
+      WECHAT_CONVERSATION_RETENTION_ENABLED: ${WECHAT_CONVERSATION_RETENTION_ENABLED:-false}
+      WECHAT_CONVERSATION_RAW_RETENTION_DAYS: ${WECHAT_CONVERSATION_RAW_RETENTION_DAYS:-30}
+      WECHAT_CONVERSATION_SUMMARY_RETENTION_DAYS: ${WECHAT_CONVERSATION_SUMMARY_RETENTION_DAYS:-180}
+      WECHAT_CONVERSATION_RETENTION_BATCH_SIZE: ${WECHAT_CONVERSATION_RETENTION_BATCH_SIZE:-50}
+      WECHAT_CONVERSATION_EXPERIENCE_POLL_MS: ${WECHAT_CONVERSATION_EXPERIENCE_POLL_MS:-60000}
+      SPRING_SCHEDULING_POOL_SIZE: ${SPRING_SCHEDULING_POOL_SIZE:-4}
+      DAILY_ENABLED: ${DAILY_ENABLED:-false}
+      DAILY_WORK_URL: http://tp-task-service:8100
 
-  # =====================================
-  # 前端服务
-  # =====================================
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: family-frontend
-    restart: always
-    ports:
-      - "80:80"
+    container_name: familyapp-frontend
+    restart: unless-stopped
+    networks:
+      public-tier:
+        ipv4_address: 172.29.0.11
+    # 对外端口已收敛至 nginx，内部通过 compose DNS 访问 frontend:80
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    environment:
+      TZ: Asia/Shanghai
 
-# =====================================
-# 数据卷定义
-# =====================================
+  tool-service:
+    build:
+      context: ./tool-service
+      dockerfile: Dockerfile
+    container_name: familyapp-tool-service
+    restart: unless-stopped
+    networks:
+      - infra-tier
+    # 仅内部服务，不映射 host 端口（安全基线：外部必须经过 backend 调用）
+    # ports: []
+    depends_on: {}
+    environment:
+      TZ: Asia/Shanghai
+      # Change 3 天气工具（留空时 weather_type=unknown 降级，不阻塞 healthz）
+      WEATHER_API_KEY: ${WEATHER_API_KEY:-}
+      WEATHER_CACHE_TTL: "21600"
+      WEATHER_LANG: zh
+      WEATHER_TIMEOUT: "8"
+
+  agent-service:
+    build:
+      context: ./agent-service
+      dockerfile: Dockerfile
+    container_name: familyapp-agent-service
+    restart: unless-stopped
+    networks:
+      - infra-tier
+    # 仅内部服务，不映射 host 端口（安全基线：外部必须经过 backend /api/agent/v1/** 代理）
+    # ports: []
+    depends_on:
+      backend:
+        condition: service_healthy
+      tool-service:
+        condition: service_healthy
+    environment:
+      TZ: Asia/Shanghai
+      # Change 2 内部双向校验
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?INTERNAL_API_SECRET must be set}
+      # Change 4 Agent 调用后端基座（Compose DNS，infra-tier）
+      BACKEND_BASE_URL: ${AGENT_SERVICE_BACKEND_URL:-http://backend:8080}
+      # 天气工具服务基座（infra-tier）
+      TOOL_SERVICE_URL: ${TOOL_SERVICE_URL_INTERNAL:-http://tool-service:8800}
+      # Change 1 V6 只读角色（agent_reader），PR-3 占位变量 AGENT_READER_PASSWORD
+      DB_AGENT_READER_URL: postgresql://agent_reader:${AGENT_READER_PASSWORD:-placeholder-agent-reader-password}@postgres:5432/${POSTGRES_DB:-familyapp}
+      # Change 4 LLM 接入（留空时拆解返回 56001 降级：建议手动创建，不阻塞 /healthz）
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+
+      # 公众号会话预算独立于其他 AI 功能；整轮时限低于后端四十五秒读取上限。
+      CONVERSATION_TIMEOUT_SECONDS: ${CONVERSATION_TIMEOUT_SECONDS:-35}
+      CONVERSATION_LLM_CONNECT_TIMEOUT_SECONDS: ${CONVERSATION_LLM_CONNECT_TIMEOUT_SECONDS:-8}
+      CONVERSATION_LLM_READ_TIMEOUT_SECONDS: ${CONVERSATION_LLM_READ_TIMEOUT_SECONDS:-25}
+      CONVERSATION_LLM_SDK_MAX_RETRIES: ${CONVERSATION_LLM_SDK_MAX_RETRIES:-0}
+      CONVERSATION_LLM_MAX_ATTEMPTS: ${CONVERSATION_LLM_MAX_ATTEMPTS:-1}
+      CONVERSATION_LLM_THINKING: ${CONVERSATION_LLM_THINKING:-disabled}
+      CONVERSATION_LLM_MAX_TOKENS: ${CONVERSATION_LLM_MAX_TOKENS:-4096}
+      # 功能回退开关（与 backend / frontend 一致，false 时拆解请求直接返回降级错误）
+      AI_DECOMPOSE_ENABLED: ${AI_DECOMPOSE_ENABLED:-true}
+
+  # Change 11：微信公众号接入服务（验签/OAuth 分流/token 单飞/菜单）。
+  # 无 DB、无 SDK；绑定数据在 backend，经 X-Internal-Secret 内部调用。
+  # 双网段：public-tier 供 nginx /wechat/ 反代，infra-tier 访问 backend；不映射 host 端口。
+  wechat-service:
+    build:
+      context: ./wechat-service
+      dockerfile: Dockerfile
+    container_name: familyapp-wechat-service
+    restart: unless-stopped
+    networks:
+      public-tier:
+        ipv4_address: 172.29.0.12
+      infra-tier: {}
+    # ports: [] —— 外部入口只有 nginx location /wechat/
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      TZ: Asia/Shanghai
+      # 微信公众号凭证（测试号/服务号后台；留空时仅 /healthz 可用，不阻塞启动）
+      WECHAT_APP_ID: ${WECHAT_APP_ID:-}
+      WECHAT_APP_SECRET: ${WECHAT_APP_SECRET:-}
+      WECHAT_TOKEN: ${WECHAT_TOKEN:-}
+      WECHAT_INBOUND_ENABLED: ${WECHAT_INBOUND_ENABLED:-false}
+      WECHAT_CONVERSATION_ENABLED: ${WECHAT_CONVERSATION_ENABLED:-false}
+      # Change 12 模板消息 ID（测试号后台「模板消息」新建后填入；留空则对应事件静默跳过）
+      WECHAT_TPL_TASK_DIGEST_ID: ${WECHAT_TPL_TASK_DIGEST_ID:-}
+      WECHAT_TPL_SUMMARY_ID: ${WECHAT_TPL_SUMMARY_ID:-}
+      WECHAT_TPL_TASK_ASSIGN_ID: ${WECHAT_TPL_TASK_ASSIGN_ID:-}
+      # Change 13 日程早报模板 ID（同一降级约定：留空则 event_digest 静默跳过）
+      WECHAT_TPL_EVENT_DIGEST_ID: ${WECHAT_TPL_EVENT_DIGEST_ID:-}
+      # 公网回调基址（cpolar/ngrok 隧道域名）：OAuth redirect_uri 与菜单 URL 基于它拼接
+      OAUTH_CALLBACK_BASE: ${WECHAT_OAUTH_BASE:-http://localhost}
+      H5_BASE_URL: ${WECHAT_H5_BASE:-${WECHAT_OAUTH_BASE:-http://localhost}}
+      # backend 内部端点（infra-tier compose DNS）
+      BACKEND_BASE_URL: ${WECHAT_BACKEND_URL:-http://backend:8080}
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?INTERNAL_API_SECRET must be set}
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8900/healthz',timeout=2).status==200 else 1)\""]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  # ---------- task-planner 工作任务计划系统（合并自 task-planner 子项目）----------
+  # 独立 PG 库 task_db，与主库 familyapp 完全隔离；无 auth，经 nginx /api/work-tasks/ 代理
+  tp-task-db:
+    image: postgres:16-alpine
+    container_name: familyapp-tp-task-db
+    restart: unless-stopped
+    networks:
+      - infra-tier
+    environment:
+      POSTGRES_DB: ${TP_POSTGRES_DB:-task_db}
+      POSTGRES_USER: ${TP_POSTGRES_USER:-tp}
+      POSTGRES_PASSWORD: ${TP_POSTGRES_PASSWORD:?TP_POSTGRES_PASSWORD must be set}
+      TZ: Asia/Shanghai
+    volumes:
+      - tp-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TP_POSTGRES_USER:-tp} -d ${TP_POSTGRES_DB:-task_db}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  tp-task-service:
+    build:
+      context: ./task-planner/task-service
+      dockerfile: Dockerfile
+    container_name: familyapp-tp-task-service
+    restart: unless-stopped
+    depends_on:
+      tp-task-db:
+        condition: service_healthy
+    networks:
+      infra-tier: {}
+      public-tier:
+        ipv4_address: 172.29.0.13
+    environment:
+      TZ: Asia/Shanghai
+      BACKEND_BASE_URL: http://backend:8080
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?INTERNAL_API_SECRET must be set}
+      POSTGRES_HOST: tp-task-db
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${TP_POSTGRES_USER:-tp}
+      POSTGRES_PASSWORD: ${TP_POSTGRES_PASSWORD:?TP_POSTGRES_PASSWORD must be set}
+      POSTGRES_DB: ${TP_POSTGRES_DB:-task_db}
+      LOG_LEVEL: ${TP_LOG_LEVEL:-INFO}
+      # 服务名改为 tp-task-service 后，MCP 白名单必须同步注入（默认含 task-service，见 config.py:40）
+      MCP_ALLOWED_HOSTS: "127.0.0.1:*,localhost:*,[::1]:*,tp-task-service,tp-task-service:*"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8100/healthz', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  tp-agent-service:
+    build:
+      context: ./task-planner/agent-service
+      dockerfile: Dockerfile
+    container_name: familyapp-tp-agent-service
+    restart: unless-stopped
+    depends_on:
+      tp-task-service:
+        condition: service_healthy
+    networks:
+      public-tier:
+        ipv4_address: 172.29.0.14
+    environment:
+      TZ: Asia/Shanghai
+      BACKEND_BASE_URL: http://backend:8080
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?INTERNAL_API_SECRET must be set}
+      MCP_TASK_SERVICE_URL: http://tp-task-service:8100/mcp
+      LLM_API_KEY: ${TP_LLM_API_KEY:-${DEEPSEEK_API_KEY:-}}
+      LLM_BASE_URL: ${TP_LLM_BASE_URL:-https://api.deepseek.com/v1}
+      LLM_MODEL: ${TP_LLM_MODEL:-deepseek-chat}
+      AGENT_SERVICE_URL: http://tp-agent-service:8101
+      LOG_LEVEL: ${TP_LOG_LEVEL:-INFO}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8101/healthz', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+networks:
+  public-tier:
+    driver: bridge
+    name: familyapp-public-tier
+    ipam:
+      config:
+        - subnet: 172.29.0.0/24
+  infra-tier:
+    driver: bridge
+    name: familyapp-infra-tier
+    # 内部网段禁止外网入站（默认 bridge 即隔离，此处显式说明）
+
 volumes:
-  # PostgreSQL 数据卷
-  postgres_data:
+  postgres-data:
     driver: local
-  # 文件上传存储卷
-  uploads:
+    # 持久化：PG 数据目录；docker compose down 默认不移除 volume（-v 才删除）
+  tp-postgres-data:
     driver: local
+    # task-planner 独立 PG 库数据卷，与 postgres-data 隔离

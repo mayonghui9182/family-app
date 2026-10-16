@@ -1,0 +1,28 @@
+{
+  "_comment": "Harness Engineering hooks for family-app. 路径均为绝对路径（Windows）。脚本位于 .harness/hooks/。",
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\mayh\\code\\family-app\\.harness\\hooks\\stop.ps1\"",
+            "statusMessage": "Harness: 检查 handoff 状态..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\mayh\\code\\family-app\\.harness\\hooks\\pre-commit.ps1\""
+          }
+        ]
+      }
+    ]
+  }
+}

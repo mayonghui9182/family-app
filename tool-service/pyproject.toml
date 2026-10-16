@@ -1,0 +1,47 @@
+[project]
+name = "tool-service"
+version = "0.1.0"
+description = "family-app 天气查询工具服务（D-1 GET /api/weather）"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.110",
+    "httpx>=0.27",
+    "pydantic-settings>=2.2",
+    "uvicorn[standard]>=0.30",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=5",
+    "respx>=0.21",
+    "ruff>=0.4",
+    "mypy>=1.10",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+"app/routes/*.py" = ["B008"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+
+[tool.pytest.ini_options]
+addopts = "--cov=app --cov-report=term-missing --cov-fail-under=80"
+asyncio_mode = "auto"
+testpaths = ["tests"]

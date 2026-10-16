@@ -1,0 +1,29 @@
+# Change 2 Task 1：内部 API 秘钥校验专用测试 Profile。
+# 刻意不复用 "test" Profile —— design.md D3 规定激活 Profile 含 test/internal-mock 时
+# 拦截器直接放行；本测试要验证真实校验链路，故用独立 Profile。
+# familyapp.auth.enabled 保持 true 以加载 WebConfig（拦截器注册在其中）。
+spring:
+  datasource:
+    url: jdbc:h2:mem:familyappinternaltest;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+    # 关键：主配置 spring.jpa.properties.hibernate.dialect=PostgreSQLDialect 会压过
+    # database-platform，导致 H2 上 JSONB 写走 cast(? as jsonb) 双重编码；显式覆盖回
+    # H2Dialect 才是解析语义（与 application-test.yml 一致，调度测试真实读回 JSONB 依赖此）。
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
+
+familyapp:
+  auth:
+    enabled: true
+
+# 正确秘钥 test-secret-correct 由 InternalSecretTest 通过 @TestPropertySource 注入，
+# 不在此写死，避免与生产默认值 dev-secret-1234-change-me 混淆。

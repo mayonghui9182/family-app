@@ -1,0 +1,71 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        // Flyway Gradle 插件使用独立类加载器：PostgreSQL 方言包必须挂在
+        // buildscript classpath 上，否则 ./gradlew flywayMigrate 报
+        // "No database found to handle jdbc:postgresql://..."（仅 implementation 不够）
+        classpath 'org.flywaydb:flyway-database-postgresql:10.15.0'
+    }
+}
+
+plugins {
+    id 'org.springframework.boot' version '3.2.8'
+    id 'io.spring.dependency-management' version '1.1.6'
+    id 'java'
+    id 'org.flywaydb.flyway' version '10.15.0'
+}
+
+group = 'com.familyapp'
+version = '0.1.0'
+
+// Override Spring Boot 3.2.8 BOM flyway.version (9.22.3) to match the
+// org.flywaydb.flyway Gradle plugin version (10.15.0). Flyway 10.x split
+// the PostgreSQL support into the standalone artifact flyway-database-postgresql,
+// which is NOT managed by the Spring Boot 3.2.x BOM, so it must be specified
+// explicitly below. Keeping flyway-core and flyway-database-postgresql on the
+// same 10.15.0 version is required for runtime compatibility.
+ext['flyway.version'] = '10.15.0'
+
+java {
+    sourceCompatibility = '17'
+    targetCompatibility = '17'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-database-postgresql:10.15.0'
+    implementation 'org.springframework.security:spring-security-crypto'
+    runtimeOnly 'org.postgresql:postgresql'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.mockito:mockito-core'
+    testImplementation 'org.mockito:mockito-junit-jupiter'
+    // 【S4 Step4 R1 Fix】bootRun test profile 启动需要 Driver 入 runtime classpath（之前是 testRuntimeOnly 仅 test task 生效）
+    // 代价：prod 打 JAR 会多带 ~2MB h2 JAR；Spring Boot AutoConfig 只看 jdbc:h2: URL，不影响生产 PostgreSQL
+    runtimeOnly 'com.h2database:h2'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    // 测试必须显式提供内部调用密钥，禁止继承生产配置中的可运行默认值。
+    environment 'INTERNAL_API_SECRET', 'test-internal-secret'
+}
+
+flyway {
+    url = project.hasProperty('flywayUrl') ? project.flywayUrl : 'jdbc:postgresql://localhost:5432/familyapp'
+    user = project.hasProperty('flywayUser') ? project.flywayUser : 'familyapp_user'
+    password = project.hasProperty('flywayPassword') ? project.flywayPassword : 'placeholder-postgres-password'
+    locations = ['filesystem:src/main/resources/db/migration']
+}

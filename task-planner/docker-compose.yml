@@ -1,0 +1,114 @@
+# ============================================================
+# 工作任务计划系统（task-planner）MVP 独立编排
+#
+# 与 family-app 既有 docker-compose.yml 完全隔离：
+#   - 独立 project 名（task-planner），独立网络、独立数据卷
+#   - 容器名统一 task-planner-* 前缀，不与 familyapp-* 冲突
+#   - 不引用 family-app 的任何服务、镜像或卷
+#
+# 启动：docker compose -p task-planner up -d --build
+# 停止：docker compose -p task-planner down          （保留数据）
+# 清空：docker compose -p task-planner down -v       （删除数据卷）
+# ============================================================
+
+name: task-planner
+
+services:
+  # ---------- 数据库：仅 task-service 连接 ----------
+  task-db:
+    image: postgres:16-alpine
+    container_name: task-planner-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-tp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tp}
+      POSTGRES_DB: ${POSTGRES_DB:-task_db}
+      TZ: ${TZ:-Asia/Shanghai}
+    volumes:
+      # 独立数据卷，与 family-app 的 postgres 卷无任何关系
+      - task_planner_pgdata:/var/lib/postgresql/data
+    networks:
+      - task-planner-net
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-tp} -d ${POSTGRES_DB:-task_db}",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # ---------- 服务1：任务管理（有状态，唯一连库方 + MCP Server） ----------
+  task-service:
+    build:
+      context: ./task-service
+    container_name: task-planner-task-service
+    depends_on:
+      task-db:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: task-db
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:-tp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tp}
+      POSTGRES_DB: ${POSTGRES_DB:-task_db}
+      TZ: ${TZ:-Asia/Shanghai}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "127.0.0.1:${TASK_SERVICE_PORT:-8100}:8100"
+    networks:
+      - task-planner-net
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8100/healthz', timeout=3)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  # ---------- 服务2：AI Agent（无状态，只经 MCP 访问数据） ----------
+  agent-service:
+    build:
+      context: ./agent-service
+    container_name: task-planner-agent-service
+    depends_on:
+      task-service:
+        condition: service_healthy
+    environment:
+      MCP_TASK_SERVICE_URL: ${MCP_TASK_SERVICE_URL:-http://task-service:8100/mcp}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.deepseek.com/v1}
+      LLM_MODEL: ${LLM_MODEL:-deepseek-chat}
+      AGENT_SERVICE_URL: ${AGENT_SERVICE_URL:-http://agent-service:8101}
+      TZ: ${TZ:-Asia/Shanghai}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "127.0.0.1:${AGENT_SERVICE_PORT:-8101}:8101"
+    networks:
+      - task-planner-net
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8101/healthz', timeout=3)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+volumes:
+  task_planner_pgdata:
+    name: task_planner_pgdata
+
+networks:
+  task-planner-net:
+    name: task-planner-net
+    driver: bridge

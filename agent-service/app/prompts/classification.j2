@@ -1,0 +1,6 @@
+从下面的分类列表中，为用户消息选择最合适的一个分类。
+分类列表（id: 名称）：
+{% for c in categories %}- {{ c.id }}: {{ c.name }}
+{% endfor %}
+用户消息：{{ message }}
+只输出 JSON：{"category_id": <数字>}。若都不合适，输出 {"category_id": null}。

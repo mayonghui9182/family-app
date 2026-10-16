@@ -1,0 +1,26 @@
+server:
+  address: 127.0.0.1
+  port: 9010
+  servlet:
+    context-path: /daily-oauth
+    session:
+      timeout: 10m
+      cookie:
+        name: DAILY_OAUTH_SESSION
+        http-only: true
+        secure: true
+        same-site: lax
+  forward-headers-strategy: none
+spring:
+  datasource:
+    url: ${DAILY_OAUTH_DATABASE_URL}
+    username: ${DAILY_OAUTH_DATABASE_USER}
+    password: ${DAILY_OAUTH_DATABASE_PASSWORD}
+daily:
+  issuer: https://app.mayh.net.cn/daily-oauth
+  resource: https://app.mayh.net.cn/mcp/daily
+  client-id: ${DAILY_OAUTH_CHATGPT_CLIENT_ID}
+  client-secret: ${DAILY_OAUTH_CHATGPT_CLIENT_SECRET}
+  redirect-uri: ${DAILY_OAUTH_CHATGPT_REDIRECT_URI}
+  reader-id: ${DAILY_OAUTH_READER_ID}
+  reader-secret: ${DAILY_OAUTH_READER_SECRET}

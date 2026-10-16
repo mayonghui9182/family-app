@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:familyapptest;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+    # 主配置 spring.jpa.properties.hibernate.dialect(PostgreSQLDialect) 会压过上面的
+    # database-platform，导致 H2 上走 cast(? as jsonb)：H2 对 VARCHAR->JSON 是
+    # 「编码为 JSON 字符串」语义而非解析，JSONB 双重编码。显式覆盖回 H2Dialect，
+    # 其写表达式 ? format json 才是解析语义（JsonbMappingSmokeTest 已验证）。
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
+
+familyapp:
+  auth:
+    enabled: false
+
+internal-api:
+  secret: test-internal-secret

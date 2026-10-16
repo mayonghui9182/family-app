@@ -1,0 +1,183 @@
+# family-app CI 流水线
+# 触发：push master + PR master；nightly E2E 仅 cron
+# 4 个并行 job：backend(Java) / frontend(Vue) / agent-service(Python) / tool-service(Python)
+# nightly job：E2E 冒烟（Docker Compose 5 容器）
+
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  schedule:
+    # nightly 02:00 UTC = 10:00 北京时间
+    - cron: '0 2 * * *'
+  workflow_dispatch: # 支持手动触发
+
+env:
+  JAVA_VERSION: '17'
+  PYTHON_VERSION: '3.12'
+  NODE_VERSION: '20'
+
+jobs:
+  # ========== 1. 后端 Java ==========
+  backend:
+    name: 后端 Java 测试
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - name: 设置 JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'gradle'
+      - name: Gradle 测试
+        run: ./gradlew test --no-daemon
+      - name: 上传测试报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-report
+          path: backend/build/reports/tests/
+          retention-days: 7
+
+  # ========== 2. 前端 Vue ==========
+  frontend:
+    name: 前端 Vue 测试
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - name: 设置 Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - name: 安装依赖
+        run: npm ci
+      - name: 构建
+        run: npm run build
+      - name: Vitest 单元测试
+        run: npx vitest run
+      - name: 上传构建产物
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 7
+
+  # ========== 3. agent-service Python ==========
+  agent-service:
+    name: Agent 服务 Python 测试
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agent-service
+    steps:
+      - uses: actions/checkout@v4
+      - name: 设置 Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - name: 安装依赖
+        run: |
+          pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Ruff 代码检查
+        run: ruff check .
+      - name: Mypy 类型检查
+        run: mypy app/
+      - name: Pytest 单元测试 + 覆盖率
+        run: python -m pytest -q tests --cov=app --cov-report=term-missing --cov-fail-under=80
+
+  # ========== 4. tool-service Python ==========
+  tool-service:
+    name: Tool 服务 Python 测试
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tool-service
+    steps:
+      - uses: actions/checkout@v4
+      - name: 设置 Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - name: 安装依赖
+        run: |
+          pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Ruff 代码检查
+        run: ruff check .
+      - name: Mypy 类型检查
+        run: mypy app/
+      - name: Pytest 单元测试 + 覆盖率
+        run: python -m pytest -q tests --cov=app --cov-report=term-missing --cov-fail-under=80
+
+  wechat-service:
+    name: 微信服务测试
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: wechat-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: 安装测试依赖
+        run: pip install -e ".[dev]"
+      - name: 类型、代码与行为验证
+        run: |
+          ruff check .
+          mypy app/
+          python -m pytest -q
+
+  # ========== 5. E2E 冒烟（仅 nightly + 手动） ==========
+  e2e-smoke:
+    name: E2E 冒烟测试
+    runs-on: ubuntu-latest
+    # 仅 nightly cron 或手动触发时运行
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: 设置 JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'gradle'
+      - name: 设置 Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - name: 构建 backend jar
+        run: cd backend && ./gradlew bootJar -x test --no-daemon
+      - name: 安装前端依赖并构建
+        run: cd frontend && npm ci && npm run build
+      - name: Docker Build
+        run: docker compose build
+      - name: Flyway 幂等性验证
+        run: bash scripts/e2e/flyway_idempotent.sh
+      - name: E2E 冒烟测试（AI 关闭模式）
+        run: AI_DECOMPOSE_ENABLED=false bash scripts/e2e/run_smoke.sh --skip-build
+      - name: 上传 E2E 日志
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-smoke-logs
+          path: /tmp/e2e_run*.log
+          retention-days: 14

@@ -1,0 +1,110 @@
+/* 老人全局按钮规范（优先级最高） ------------------- */ .el-button {   min-height: 42px;   font-size: 16px;   border-radius: 8px; } .el-button--large {   min-height: 48px;   font-size: 18px;   padding: 0 24px;   border-radius: 10px; } .el-button--small {   min-height: 40px;   font-size: 16px;   padding: 0 16px; } /* 登录/注册提交主按钮再放大一档 */ .submit-btn.el-button {   width: 100%;   min-height: 56px;   font-size: 20px;   font-weight: 600;   border-radius: 12px;   margin-top: 12px; } /* 输入框 & 表单标签放大 */ .el-form-item__label {   font-size: 17px;   font-weight: 600;   color: #303133; } .el-input__inner, .el-input__wrapper {   font-size: 17px !important; } .el-input--large .el-input__wrapper {   min-height: 48px; } /* 空占位引导文字 */ .empty-tip {   font-size: 18px !important;   color: #606266;   font-weight: 600;   line-height: 1.8; } .el-empty__description p {   font-size: 18px !important;   font-weight: 600;   color: #606266; } /* 红色实时错误提示 */ .field-error-tip {   color: #f56c6c;   font-size: 15px;   font-weight: 600;   line-height: 1.6;   margin-top: 4px; } .field-info-tip {   color: #909399;   font-size: 14px;   line-height: 1.6;   margin-top: 2px; } /* 二次确认弹窗按钮：确认按钮更醒目 */ .el-message-box .el-button--primary {   min-height: 44px;   font-size: 17px;   font-weight: 600; } .el-message-box {   border-radius: 12px; position: absolute !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%) !important; margin: 0 !important; } .el-message-box__title {   font-size: 20px !important;   font-weight: 700 !important; } .el-message-box__message p {   font-size: 17px !important;   line-height: 1.8 !important; } /* 主色微调，更柔和（WCAG AA 对比≥4.5:1） */ :root {   --el-color-primary: #2563EB;   --el-color-success: #16A34A;   --el-color-warning: #D97706;   --el-color-danger:  #DC2626; } /* ============== WCAG 无障碍通用样式 ============== */ /* 焦点可见样式：高对比度 ≥3:1 + 轮廓 ≥2px（Chrome 默认焦点太淡） */ *:focus-visible {   outline: 3px solid #2563EB !important;   outline-offset: 2px !important;   border-radius: 4px; } /* 高对比模式（Windows）尊重系统偏好 */ @media (prefers-contrast: more) {   :root {     --el-color-primary: #1D4ED8;     --el-color-success: #15803D;     --el-color-warning: #B45309;     --el-color-danger:  #B91C1C;   }   .el-button {     border-width: 2px !important;     font-weight: 700;   } } /* 减少动画（尊重系统减少动效偏好） */ @media (prefers-reduced-motion: reduce) {   *, *::before, *::after {     animation-duration: 0.01ms !important;     animation-iteration-count: 1 !important;     transition-duration: 0.01ms !important;   } } /* 屏幕阅读器专用（仅朗读，视觉隐藏） */ .sr-only {   position: absolute;   width: 1px; height: 1px;   padding: 0; margin: -1px;   overflow: hidden; clip: rect(0,0,0,0);   white-space: nowrap; border-width: 0; } /* 跳过链接：只在按 Tab 第一下时出现，给键盘用户跳去主内容 */ .skip-to-content {   position: absolute; top: -100px; left: 10px;   background: #2563EB; color: #fff !important;   padding: 14px 24px; font-size: 18px; font-weight: 700;   border-radius: 0 0 8px 8px; z-index: 9999;   transition: top 0.2s ease; } .skip-to-content:focus-visible {   top: 0; } /* ============== 字号三档 S/M/L（老人友好，通过 html class 切换） ============== */ /* --app-font-base: html 的默认字号，全局 rem 跟随这个基准自动缩放 */ html.font-scale-s { --app-font-base: 16px; } html.font-scale-m { --app-font-base: 18px; } /* 默认大字号，老人一眼能看清 */ html.font-scale-l { --app-font-base: 21px; } /* 特大字号，老花眼不用眯眼 */  html {   font-size: var(--app-font-base, 18px); /* 全局基准：1rem = 16/18/21px */   -webkit-text-size-adjust: 100%; /* iOS Safari 不自动放大 */ }  /* 所有继承 body 的文本自动跟随 rem 基准 */ body {   font-size: 1rem;       /* 对应 16/18/21px */   line-height: 1.65;     /* 老人文本行距大一点，不挤 */   color: #1F2937;        /* 深灰，对比更友好 */ }  /* h1-h6 同比缩放 */ h1 { font-size: 1.9rem; font-weight: 700; } h2 { font-size: 1.6rem; font-weight: 700; } h3 { font-size: 1.35rem; font-weight: 700; } h4 { font-size: 1.15rem; font-weight: 600; } .section-title { font-size: 1.2rem; } .field-info-tip { font-size: 0.95rem; } .field-error-tip { font-size: 0.98rem; } .empty-tip, .el-empty__description p { font-size: 1.05rem !important; } .login-title { font-size: 2rem; }  /* -------- Element Plus 硬编码 px 的关键选择器：用 calc(*倍率) 同比放大 -------- */ /* Element Plus 多数组件 font-size 写死 px，所以我们按三档倍率分别覆盖：    S = 1.0 不用改 / M = ×1.125 / L = ×1.3125 */ html.font-scale-m .el-form-item__label, html.font-scale-l .el-form-item__label { font-size: calc(17px * var(--_m)) !important; } html.font-scale-m .el-button, html.font-scale-l .el-button { font-size: calc(16px * var(--_m)) !important; } html.font-scale-m .el-button--large, html.font-scale-l .el-button--large { font-size: calc(18px * var(--_m)) !important; min-height: calc(48px * var(--_m)) !important; } html.font-scale-m .el-button--small, html.font-scale-l .el-button--small { font-size: calc(16px * var(--_m)) !important; min-height: calc(40px * var(--_m)) !important; } html.font-scale-m .submit-btn.el-button, html.font-scale-l .submit-btn.el-button { font-size: calc(20px * var(--_m)) !important; min-height: calc(56px * var(--_m)) !important; } html.font-scale-m .el-input__inner, html.font-scale-l .el-input__inner { font-size: calc(17px * var(--_m)) !important; } html.font-scale-m .el-input--large .el-input__wrapper, html.font-scale-l .el-input--large .el-input__wrapper { min-height: calc(48px * var(--_m)) !important; } html.font-scale-m .el-message-box__title, html.font-scale-l .el-message-box__title { font-size: calc(20px * var(--_m)) !important; } html.font-scale-m .el-message-box__message p, html.font-scale-l .el-message-box__message p { font-size: calc(17px * var(--_m)) !important; } html.font-scale-m .el-table, html.font-scale-l .el-table { font-size: calc(15px * var(--_m)) !important; } html.font-scale-m .el-table th, html.font-scale-l .el-table th { font-size: calc(15px * var(--_m)) !important; } html.font-scale-m .el-descriptions, html.font-scale-l .el-descriptions { font-size: calc(16px * var(--_m)) !important; } html.font-scale-m .el-tag, html.font-scale-l .el-tag { font-size: calc(14px * var(--_m)) !important; } html.font-scale-m .el-dialog__title, html.font-scale-l .el-dialog__title { font-size: calc(19px * var(--_m)) !important; } html.font-scale-m .el-alert, html.font-scale-l .el-alert { font-size: calc(15px * var(--_m)) !important; } html.font-scale-m .el-select-dropdown__item, html.font-scale-l .el-select-dropdown__item { font-size: calc(16px * var(--_m)) !important; height: calc(40px * var(--_m)) !important; line-height: calc(40px * var(--_m)) !important; } html.font-scale-m .el-radio-button__inner, html.font-scale-l .el-radio-button__inner { font-size: calc(16px * var(--_m)) !important; padding: calc(10px * var(--_m)) calc(18px * var(--_m)) !important; min-height: calc(44px * var(--_m)) !important; }  /* 注入 M / L 档各自的 --_m 私有变量（让上面的 calc 实际乘对值） */ html.font-scale-m { --_m: 1.125; } html.font-scale-l { --_m: 1.3125; }  /* 头部字号切换按钮组的统一尺寸（再放大一档方便老人点击） */ .font-scale-radio {   min-height: 48px !important;   padding: 0 4px; } .font-scale-wrap {   display: inline-flex;   align-items: center;   gap: 6px;   margin-right: 12px; } 
+/* 邀请分享卡预览弹窗（大屏显示） */
+.share-card-dialog .el-dialog {
+  width: 92vw !important;
+  max-width: 540px !important;
+  margin: 5vh auto !important;
+}
+.share-card-dialog .el-dialog__body {
+  padding: 12px 10px 18px !important;
+  text-align: center;
+}
+.share-card-dialog .share-card-preview {
+  width: 100%;
+  max-width: 500px;
+  height: auto;
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(37, 99, 235, 0.18);
+  display: block;
+  margin: 0 auto 12px;
+}
+.share-card-dialog .share-card-tip {
+  color: #6B7280;
+  font-size: 1.0rem;
+  line-height: 1.7;
+  padding: 6px 12px;
+}
+.share-card-dialog .share-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* ============== AI 拆解功能开关：关闭时隐藏所有 AI 入口（Change 7 Task 2 子步骤 7）============== */
+/* 当 document.body 含 .ai-disabled class（由 stores/decompose.js 初始化时添加），
+   所有 AI 拆解相关按钮/卡片一律隐藏，避免老人误点后报错。 */
+.ai-disabled .ai-entry-btn,
+.ai-disabled .ai-decompose-card,
+.ai-disabled [data-ai="true"] {
+  display: none !important;
+}
+
+/* ============== 移动端响应式断点（Change 9） ==============
+   SSOT：断点宽度 768px，必须与 composables/useIsMobile.js 的
+   MOBILE_BREAKPOINT 常量保持一致。组件树切换（BottomTabBar/卡片形态）
+   由 useIsMobile() 驱动 v-if；本块只负责纯 CSS 形态兜底。 */
+@media (max-width: 768px) {
+  /* 弹窗在 375px 窄屏不溢出，居中 92% 宽度 */
+  .el-dialog {
+    width: 92% !important;
+    margin: 5vh auto !important;
+  }
+  /* 二次确认弹窗同样限宽，防止 420px 默认宽度撑出 375px 屏幕 */
+  .el-message-box {
+    width: 92% !important;
+    max-width: 420px;
+  }
+  /* 触控目标最小 44px（老人手指点按） */
+  .el-button,
+  .tab-item,
+  .more-card {
+    min-height: 44px;
+  }
+  /* 消息弹框按钮同样加大触控区 */
+  .el-message-box__btns .el-button {
+    min-height: 44px;
+    padding: 0 20px;
+  }
+  /* 表格单元格紧凑化：家庭管理/首页表格在窄屏少占空间，减少横向滚动 */
+  .el-table .cell {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  /* 日期选择弹层限宽，避免溢出屏幕 */
+  .el-picker__popper .el-date-picker {
+    max-width: 92vw;
+  }
+}
+
+/* ===== ElMessage 全局：老人友好（大字+居中+可手动关闭+5秒） ===== */
+/* 必须显式 position: fixed，否则消息会流入文档流出现在内容区中间；
+   实心背景防透明；高 z-index 防遮挡 */
+.el-message {
+  position: fixed !important;
+  top: 20px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  max-width: 92vw !important;
+  z-index: 9999 !important;
+  background: #ffffff !important;
+  font-size: 17px !important;
+  line-height: 1.6 !important;
+  padding: 14px 20px !important;
+  border-radius: 10px !important;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.18) !important;
+}
+.el-message .el-message__content {
+  font-size: 17px !important;
+  line-height: 1.6 !important;
+}
+.el-message .el-message__closeBtn {
+  font-size: 18px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+/* 不同类型消息保留语义色边框（成功绿/警告橙/危险红/信息蓝） */
+.el-message--success { border-left: 4px solid #16A34A !important; }
+.el-message--warning { border-left: 4px solid #D97706 !important; }
+.el-message--error   { border-left: 4px solid #DC2626 !important; }
+.el-message--info    { border-left: 4px solid #2563EB !important; }

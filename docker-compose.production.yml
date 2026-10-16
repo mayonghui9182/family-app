@@ -1,0 +1,16 @@
+# 与基础编排合并使用；缺少显式生产凭据时拒绝解析。
+services:
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?请配置生产数据库密码}
+  backend:
+    environment:
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?请配置生产数据库密码}
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?请配置内部接口密钥}
+  agent-service:
+    environment:
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?请配置内部接口密钥}
+      DB_AGENT_READER_URL: postgresql://agent_reader:${AGENT_READER_PASSWORD:?请配置只读账号密码}@postgres:5432/${POSTGRES_DB:-familyapp}
+  wechat-service:
+    environment:
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?请配置内部接口密钥}

@@ -1,0 +1,165 @@
+{
+  "contract_version": 1,
+  "limits": {
+    "candidate_min": 1,
+    "candidate_max": 20,
+    "recent_messages_max": 16,
+    "experiences_max": 5
+  },
+  "action_values": [
+    "ASK_CLARIFICATION",
+    "PRESENT_CANDIDATE",
+    "REFUSE_OR_HELP"
+  ],
+  "turn_request": {
+    "conversation_id": 201,
+    "route_revision": 3,
+    "current_revision": 2,
+    "message_id": 101,
+    "user_text": "这次请爸爸周五买菜",
+    "family": {
+      "family_id": 11,
+      "family_name": "一一家",
+      "actor_user_id": 81,
+      "actor_role": "ADULT"
+    },
+    "allowed_slot_keys": [
+      "topic",
+      "assignee",
+      "due_date"
+    ],
+    "slot_state": {
+      "topic": {
+        "value": "买菜",
+        "source": "USER_EXPLICIT",
+        "source_message_id": 99,
+        "experience_id": null
+      }
+    },
+    "current_candidate": {
+      "revision": 2,
+      "tasks": [
+        {
+          "title": "买菜",
+          "description": "",
+          "due_date": null,
+          "priority": "MEDIUM",
+          "category_id": 10,
+          "assignee_profile_id": 20
+        }
+      ]
+    },
+    "rolling_summary": "用户要安排本周买菜。",
+    "recent_messages": [
+      {
+        "message_id": 99,
+        "direction": "INBOUND",
+        "content": "安排买菜",
+        "created_at": "2026-10-01T00:00:00Z"
+      },
+      {
+        "message_id": 100,
+        "direction": "OUTBOUND",
+        "content": "请问由谁负责？",
+        "created_at": "2026-10-01T00:00:01Z"
+      }
+    ],
+    "experiences": [
+      {
+        "experience_id": 30,
+        "version": 2,
+        "normalized_key": "assignee:shopping",
+        "value_summary": "买菜通常由妈妈负责"
+      }
+    ],
+    "categories": [
+      {
+        "category_id": 10,
+        "name": "家务"
+      }
+    ],
+    "members": [
+      {
+        "profile_id": 20,
+        "display_name": "妈妈",
+        "user_id": 82
+      },
+      {
+        "profile_id": 21,
+        "display_name": "爸爸",
+        "user_id": 83
+      }
+    ]
+  },
+  "turn_response": {
+    "action": "PRESENT_CANDIDATE",
+    "reply": "我按您刚说的整理好了，请确认。",
+    "tasks": [
+      {
+        "title": "周五买菜",
+        "description": "按本轮要求由爸爸负责",
+        "due_date": "2026-10-09",
+        "priority": "MEDIUM",
+        "category_id": 10,
+        "assignee_profile_id": 21
+      }
+    ],
+    "slot_patch": {
+      "assignee": {
+        "value": "爸爸",
+        "source": "USER_EXPLICIT",
+        "source_message_id": 101,
+        "experience_id": null
+      }
+    }
+  },
+  "summary_request": {
+    "conversation_id": 201,
+    "previous_summary": {
+      "confirmed_facts": [
+        "用户要安排买菜"
+      ],
+      "open_questions": [
+        "由谁负责"
+      ],
+      "user_decisions": [],
+      "candidate_overview": [
+        "已有一条买菜候选"
+      ],
+      "last_message_id": 100
+    },
+    "messages": [
+      {
+        "message_id": 101,
+        "direction": "INBOUND",
+        "content": "这次请爸爸周五买菜",
+        "created_at": "2026-10-01T00:00:02Z"
+      },
+      {
+        "message_id": 102,
+        "direction": "OUTBOUND",
+        "content": "我按您刚说的整理好了，请确认。",
+        "created_at": "2026-10-01T00:00:03Z"
+      }
+    ]
+  },
+  "summary_response": {
+    "confirmed_facts": [
+      "用户要安排买菜",
+      "执行人是爸爸",
+      "日期是周五"
+    ],
+    "open_questions": [],
+    "user_decisions": [
+      "本轮明确改为爸爸负责"
+    ],
+    "candidate_overview": [
+      "周五由爸爸买菜"
+    ],
+    "last_message_id": 102
+  },
+  "error_envelope": {
+    "code": 56002,
+    "msg": "AI 会话返回格式解析失败，请重试"
+  }
+}

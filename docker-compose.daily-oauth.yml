@@ -1,0 +1,55 @@
+# 可选发布材料，默认不加载；明确授权部署后才与基础编排合并。
+services:
+  backend:
+    environment:
+      DAILY_REMOTE_ENABLED: ${DAILY_REMOTE_ENABLED:-false}
+  daily-oauth:
+    build: ./integrations/daily-oauth
+    networks: [public-tier, infra-tier]
+    read_only: true
+    tmpfs: [/tmp]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DAILY_OAUTH_ENABLED: ${DAILY_OAUTH_ENABLED:-false}
+      SERVER_ADDRESS: 0.0.0.0
+      DAILY_OAUTH_DATABASE_URL: ${DAILY_OAUTH_DATABASE_URL:-}
+      DAILY_OAUTH_DATABASE_USER: ${DAILY_OAUTH_DATABASE_USER:-}
+      DAILY_OAUTH_DATABASE_PASSWORD: ${DAILY_OAUTH_DATABASE_PASSWORD:-}
+      SPRING_FLYWAY_SCHEMAS: daily_oauth
+      SPRING_FLYWAY_CREATE_SCHEMAS: "false"
+      DAILY_OAUTH_CHATGPT_CLIENT_ID: ${DAILY_OAUTH_CHATGPT_CLIENT_ID:-}
+      DAILY_OAUTH_CHATGPT_CLIENT_SECRET: ${DAILY_OAUTH_CHATGPT_CLIENT_SECRET:-}
+      DAILY_OAUTH_CHATGPT_REDIRECT_URI: ${DAILY_OAUTH_CHATGPT_REDIRECT_URI:-}
+      DAILY_OAUTH_READER_ID: ${DAILY_OAUTH_READER_ID:-}
+      DAILY_OAUTH_READER_SECRET: ${DAILY_OAUTH_READER_SECRET:-}
+  daily-mcp:
+    build: ./integrations/daily-mcp
+    networks: [public-tier]
+    read_only: true
+    tmpfs: [/tmp]
+    depends_on:
+      daily-oauth:
+        condition: service_started
+      backend:
+        condition: service_healthy
+    environment:
+      DAILY_REMOTE_ENABLED: ${DAILY_REMOTE_ENABLED:-false}
+      DAILY_REMOTE_HOST: 0.0.0.0
+      DAILY_OAUTH_ISSUER: https://app.mayh.net.cn/daily-oauth
+      DAILY_OAUTH_RESOURCE: https://app.mayh.net.cn/mcp/daily
+      DAILY_OAUTH_INTROSPECTION: http://daily-oauth:9010/daily-oauth/oauth2/introspect
+      DAILY_OAUTH_CLIENT_ID: ${DAILY_OAUTH_READER_ID:-}
+      DAILY_OAUTH_CLIENT_SECRET: ${DAILY_OAUTH_READER_SECRET:-}
+      DAILY_REMOTE_BACKEND: http://backend:8080
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?INTERNAL_API_SECRET must be set}
+      PYTHONDONTWRITEBYTECODE: "1"
+  nginx:
+    depends_on:
+      daily-oauth:
+        condition: service_started
+      daily-mcp:
+        condition: service_started
+    volumes:
+      - ./nginx/daily-oauth-routes.conf:/etc/nginx/daily-optional/routes.conf:ro

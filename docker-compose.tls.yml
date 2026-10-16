@@ -1,0 +1,10 @@
+# 可选 TLS 覆盖层：仅在已有证书和私钥时合并使用。
+# 基础 Cloudflare Tunnel 仍推荐回源 http://localhost:80，无需加载本文件。
+services:
+  nginx:
+    ports:
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/https.conf:/etc/nginx/conf.d/https.conf:ro
+      - ${NGINX_TLS_CERT_PATH:?请配置证书完整链文件路径}:/etc/nginx/tls/fullchain.pem:ro
+      - ${NGINX_TLS_KEY_PATH:?请配置证书私钥文件路径}:/etc/nginx/tls/privkey.pem:ro

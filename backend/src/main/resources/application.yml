@@ -1,87 +1,118 @@
-# 服务器配置
-server:
-  port: 8080
-  servlet:
-    context-path: /api
-
-# Spring 配置
 spring:
   application:
-    name: family-backend
-
-  # 数据源配置 - H2 数据库（开发环境）
+    name: family-app-backend
   datasource:
-    driver-class-name: org.h2.Driver
-    url: jdbc:h2:mem:family_db;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
-    username: sa
-    password:
-
-  # H2 控制台（开发环境使用）
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-
-  # Flyway 数据库迁移配置
+    # stringtype=unspecified：CalendarEvent.recurrence 经 NullSafeJsonNodeConverter
+    # 以字符串参数写 jsonb 列，PG 服务端需按目标列类型隐式转换，否则报 42804 类型错误
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/familyapp?stringtype=unspecified}
+    username: ${SPRING_DATASOURCE_USERNAME:familyapp_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:placeholder-postgres-password}
+    driver-class-name: org.postgresql.Driver
   flyway:
-    enabled: true
+    enabled: ${SPRING_FLYWAY_ENABLED:true}
     locations: classpath:db/migration
-    baseline-on-migrate: true
+  jpa:
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:validate}
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  # ===== Change 14 D2：调度线程池扩容（新增 @Scheduled 作业前的硬前置）=====
+  # Spring Boot 默认调度池只有 1 个线程，而本仓库已有 6 处 @Scheduled。
+  # WechatIntakeJob 内含 LLM 长调用（数十秒级），沿用单线程池会让一次慢拆解
+  # 把任务提醒、日历提醒、微信早报等定时作业全部堵死 ⇒ 扩到 4。
+  task:
+    scheduling:
+      pool:
+        size: ${SPRING_SCHEDULING_POOL_SIZE:4}
 
-  # Jackson 配置
-  jackson:
-    date-format: yyyy-MM-dd HH:mm:ss
-    time-zone: Asia/Shanghai
-    default-property-inclusion: non_null
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE:health}
+  endpoint:
+    health:
+      show-details: never
 
-  # Servlet Multipart 配置
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
+server:
+  # 保留真实套接字来源，由明确的可信代理白名单解释找回接口头部。
+  forward-headers-strategy: none
+  port: 8080
 
-# MyBatis-Plus 配置
-mybatis-plus:
-  mapper-locations: classpath*:mapper/**/*.xml
-  type-aliases-package: com.family.entity
-  configuration:
-    map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-  global-config:
-    db-config:
-      id-type: auto
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
+familyapp:
+  password-reset:
+    trusted-proxies: ${PASSWORD_RESET_TRUSTED_PROXIES:}
+    enabled: ${PASSWORD_RESET_ENABLED:false}
+    public-url: ${PASSWORD_RESET_PUBLIC_URL:}
+    from: ${PASSWORD_RESET_FROM:}
+    smtp-host: ${PASSWORD_RESET_SMTP_HOST:}
+    smtp-port: ${PASSWORD_RESET_SMTP_PORT:587}
+    smtp-username: ${PASSWORD_RESET_SMTP_USERNAME:}
+    smtp-password: ${PASSWORD_RESET_SMTP_PASSWORD:}
+    starttls: ${PASSWORD_RESET_STARTTLS:true}
+  auth:
+    enabled: true
+  # ===== Change 7：AI 拆解功能总开关（D4 三端回退开关 Backend 侧注入点）=====
+  # 作用：
+  #   true  = 正常开放 AgentProxyController C-25~C-34 + /config 返回 true
+  #   false = AgentProxyController 所有端点返回 Result(50310, "AI 拆解功能已关闭，请联系家庭管理员")
+  #           + /config 返回 false（前端 stores/decompose.js 加 .ai-disabled class 全局隐藏 AI 入口按钮）
+  # 注意：此处先完成配置注入；AgentProxyController.java 的守卫代码需 Change 6 Task 1 Backend 实装后补充
+  ai-decompose:
+    enabled: ${AI_DECOMPOSE_ENABLED:true}
 
-# Springdoc OpenAPI 配置
-springdoc:
-  api-docs:
-    path: /v3/api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-    tags-sorter: alpha
-    operations-sorter: alpha
+# ===== Change 2：内部 Agent API =====
+internal-api:
+  secret: ${INTERNAL_API_SECRET}
+agent-service:
+  base-url: ${AGENT_SERVICE_BASE_URL:http://localhost:8700}
+tool-service:
+  base-url: ${TOOL_SERVICE_BASE_URL:http://localhost:8800}
 
-# JWT 配置
-jwt:
-  secret: family-management-system-secret-key-2024
-  expire-hours: 24
-
-# 文件上传配置
-file:
-  upload-path: ./uploads
-  max-size: 10MB
-
-# 日志配置
-logging:
-  level:
-    com.family: debug
-    org.springframework.web: info
-
-# 百度语音配置
-baidu:
-  speech:
-    app-id: your-app-id
-    api-key: your-api-key
-    secret-key: your-secret-key
+# ===== Change 12：微信模板消息推送（backend → wechat-service 内网调用）=====
+wechat:
+  service-base-url: ${WECHAT_SERVICE_BASE_URL:http://wechat-service:8900}
+  # 回推深链的 H5 基址（design.md D9）：与 wechat-service 的 h5_base_url 应配成同一个对外地址，
+  # 只用于拼链接、不参与任何业务判断；尾斜杠会被剥掉，避免拼出 //wechat/authorize
+  h5-base-url: ${WECHAT_H5_BASE_URL:http://localhost}
+  notify:
+    # 关闭后全链路零 HTTP（早报/总结/指派事件均 no-op）；wechat-service 不可达时也自动降级不影响业务
+    enabled: ${WECHAT_NOTIFY_ENABLED:true}
+  # ===== Change 14：公众号 1v1 私聊消息自动对接 AI 拆解 =====
+  intake:
+    # 总开关（生产第一回退手段）：false 时受理端点短路于查绑定之前，只落 SKIPPED/intake_disabled 留痕，
+    # 既不建草稿也不调 LLM；表数据保留供排障，回退无需删表
+    enabled: ${WECHAT_INTAKE_ENABLED:false}
+    # WechatIntakeJob 轮询间隔；默认 5s，与「表即队列」的既存风格一致
+    poll-fixed-delay-ms: ${WECHAT_INTAKE_POLL_MS:5000}
+    # 启动后首轮的延迟；给 Flyway/连接池/微信 token 预热留出窗口，避免冷启动白吃一次重试额度
+    poll-initial-delay-ms: ${WECHAT_INTAKE_POLL_INITIAL_MS:15000}
+    # 拆解重试上限，耗尽后落 FAILED 并回推「拆解失败」话术
+    max-attempts: ${WECHAT_INTAKE_MAX_ATTEMPTS:3}
+  # ===== 微信持续会话入口与 worker（全部默认关闭）=====
+  conversation:
+    enabled: ${WECHAT_CONVERSATION_ENABLED:false}
+    worker-enabled: ${WECHAT_CONVERSATION_WORKER_ENABLED:false}
+    poll-fixed-delay-ms: ${WECHAT_CONVERSATION_POLL_MS:1000}
+    poll-initial-delay-ms: ${WECHAT_CONVERSATION_POLL_INITIAL_MS:15000}
+    lease-seconds: ${WECHAT_CONVERSATION_LEASE_SECONDS:120}
+    ttl-hours: ${WECHAT_CONVERSATION_TTL_HOURS:24}
+    max-attempts: ${WECHAT_CONVERSATION_MAX_ATTEMPTS:5}
+    retry-initial-delay-ms: ${WECHAT_CONVERSATION_RETRY_INITIAL_MS:1000}
+    retry-max-delay-ms: ${WECHAT_CONVERSATION_RETRY_MAX_MS:60000}
+    progress-fast-threshold-ms: ${WECHAT_CONVERSATION_PROGRESS_FAST_MS:2500}
+    max-reply-segments: ${WECHAT_CONVERSATION_MAX_REPLY_SEGMENTS:3}
+    summary-every-turns: ${WECHAT_CONVERSATION_SUMMARY_EVERY_TURNS:6}
+    summary-context-chars: ${WECHAT_CONVERSATION_SUMMARY_CONTEXT_CHARS:6000}
+    retention-enabled: ${WECHAT_CONVERSATION_RETENTION_ENABLED:false}
+    raw-message-retention-days: ${WECHAT_CONVERSATION_RAW_RETENTION_DAYS:30}
+    summary-retention-days: ${WECHAT_CONVERSATION_SUMMARY_RETENTION_DAYS:180}
+    retention-batch-size: ${WECHAT_CONVERSATION_RETENTION_BATCH_SIZE:50}
+    experience-fixed-delay-ms: ${WECHAT_CONVERSATION_EXPERIENCE_POLL_MS:60000}
+daily:
+  enabled: ${DAILY_ENABLED:false}
+  remote-enabled: ${DAILY_REMOTE_ENABLED:false}
+  work-url: ${DAILY_WORK_URL:http://tp-task-service:8100}

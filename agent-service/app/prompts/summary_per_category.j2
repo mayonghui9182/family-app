@@ -1,0 +1,37 @@
+{# 分类级每日总结建议 Prompt（Change 5 Task 3，对齐 plan §Q64）。
+   变量（StrictUndefined，缺一即报错）：
+     category_name    分类名
+     template_steps   模板当前步骤列表
+     diff_lines       diff_engine 已识别的中文变更行（可为空）
+     samples          TaskSample 列表（近 30 天同分类已完成任务实际形态）
+     cancelled_count  该分类近 7 天被家人取消的 AI 提案数（❌2 联动）
+#}
+你是家庭事务总结助手，服务对象包含老人，请全程使用简体中文。
+下面是分类「{{ category_name }}」近期已完成任务的实际执行情况，以及系统已识别的家人行为差异。
+请判断这套模板是否贴合本家庭习惯，并给出中文建议。
+
+【模板当前步骤】
+{% for step in template_steps %}{{ loop.index }}. {{ step }}
+{% endfor %}
+【系统已识别的行为差异】
+{% for line in diff_lines %}- {{ line }}
+{% endfor %}
+{% if not diff_lines %}- 暂未识别到需要改模板的行为差异
+{% endif %}
+【近期任务实际子待办与便签】
+{% for s in samples %}任务 {{ s.task_id }}：{% for sub in s.subtasks %}{% if sub.is_ai_generated %}[AI原始]{{ sub.title }} {% else %}{{ sub.title }} {% endif %}{% endfor %}
+{% if s.notes %}便签：{{ s.notes | join(' / ') }}
+{% endif %}{% endfor %}
+{% if cancelled_count >= 5 %}【风险提示】该分类近 7 天家人已取消 {{ cancelled_count }} 条 AI 提案，
+请在建议中说明可能原因（步骤太碎？时间不合适？与家人习惯不符？）并给出减负策略。
+{% endif %}
+只输出一个 JSON 对象，不要任何解释文字、不要 markdown 代码块，字段如下：
+{"additional_tips_cn": "给家人看的中文建议，一到三句，短句、口语化，说清下次怎么做更省力",
+ "mark_important": false,
+ "suggested_common_steps_add": ["建议补充的中文步骤短语，没有就给空数组"],
+ "frequency_removals": ["建议精简掉的中文步骤短语，没有就给空数组"]}
+硬性要求：
+1. 所有字段值一律简体中文，不得出现英文句子或拼音。
+2. 步骤短语不超过 12 个字，必须是能直接动手做的动作。
+3. mark_important 仅当本轮差异确实值得长期保留时为 true，否则 false。
+4. 建议只做参考，不得要求删除家庭自定义的重要版本。
